@@ -194,6 +194,8 @@ TYPE, PUBLIC :: LocalVariables
     REAL(4)                             :: Fl_PitCom                           ! Shutdown, .FALSE. if inactive, .TRUE. if active
     REAL(4)                             :: NACIMU_FA_AccF
     REAL(4)                             :: Flp_Angle(3)                 ! Flap Angle (rad)
+    INTEGER(4)                          :: ACC_INFILE_SIZE
+    CHARACTER, DIMENSION(:), ALLOCATABLE :: ACC_INFILE
     END TYPE LocalVariables
 
 TYPE, PUBLIC :: ObjectInstances

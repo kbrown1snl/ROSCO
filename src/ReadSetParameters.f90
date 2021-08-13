@@ -550,6 +550,11 @@ CONTAINS
                      'Visit our GitHub-page to contribute to this project:                          '//NEW_LINE('A')// &
                      'https://github.com/NREL/ROSCO                                                 '//NEW_LINE('A')// &
                      '------------------------------------------------------------------------------'
+
+            LocalVar%ACC_INFILE_SIZE = NINT(avrSWAP(50))
+            Allocate(LocalVar%ACC_INFILE(LocalVar%ACC_INFILE_SIZE))
+            LocalVar%ACC_INFILE = accINFILE
+            
             CALL ReadControlParameterFileSub(CntrPar, accINFILE, NINT(avrSWAP(50)))
 
             IF (CntrPar%WE_Mode > 0) THEN
@@ -638,5 +643,205 @@ CONTAINS
             READ(UnPerfParameters, *) PerfData%Ct_mat(i,:) ! Read Cq table
         END DO
     
-    END SUBROUTINE ReadCpFile
+      END SUBROUTINE ReadCpFile
+
+      SUBROUTINE WriteRestartFile(LocalVar, CntrPar, objInst, accINFILE, accINFILE_size)
+        USE ROSCO_Types, ONLY : LocalVariables, ObjectInstances, ControlParameters
+      
+        TYPE(LocalVariables), INTENT(IN)                 :: LocalVar
+        TYPE(ControlParameters), INTENT(INOUT) :: CntrPar
+        TYPE(ObjectInstances), INTENT(INOUT) :: objInst
+        INTEGER(4), INTENT(IN)                         :: accINFILE_size               ! size of DISCON input filename
+        CHARACTER(accINFILE_size),  INTENT(IN   )      :: accINFILE(accINFILE_size)    ! DISCON input filename  
+       
+        INTEGER(4), PARAMETER        :: Un            = 87                              ! I/O unit for pack/unpack (checkpoint & restart)
+        INTEGER(4)                   :: I                                               ! Generic index.
+        CHARACTER(SIZE(accINFILE)-1) :: InFile    ! a Fortran version of the input C string (not considered an array here)    [subtract 1 for the C null-character]
+        INTEGER(4)                   :: ErrStat
+        CHARACTER(128)               :: ErrMsg                                          ! a Fortran version of the C string argument (not considered an array here) [subtract 1 for the C null-character] 
+      
+        InFile = TRANSFER( accINFILE(1:LEN(InFile)),  InFile )
+        I = INDEX(InFile,C_NULL_CHAR) - 1         ! if this has a c null character at the end...
+        IF ( I > 0 ) InFile = InFile(1:I)         ! remove it
+      
+        OPEN( Un, FILE=TRIM( InFile ), STATUS='UNKNOWN', FORM='UNFORMATTED' , ACCESS='STREAM', IOSTAT=ErrStat, ACTION='WRITE' )
+      
+        IF ( ErrStat /= 0 ) THEN
+           ErrMsg  = 'Cannot open file "'//TRIM( InFile )//'". Another program may have locked it for writing.'
+           
+        ELSE
+
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%FA_AccHPF
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%FA_AccHPFI
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%FA_PitCom(1)
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%FA_PitCom(2)     
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%FA_PitCom(3)
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%GenSpeedF     
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%GenTq
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%GenTqMeas
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%GenArTq
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%GenBrTq
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%GlobalState
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%IPC_PitComF(1)
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%IPC_PitComF(2)     
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%IPC_PitComF(3)
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%PC_KP
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%PC_KI
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%PC_KD           
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%PC_TF
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%PC_MaxPit
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%PC_MinPit
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%PC_PitComT
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%PC_PitComT_IPC(1)
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%PC_PitComT_IPC(2)
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%PC_PitComT_IPC(3)     
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%PC_PwrErr
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%PC_SineExcitation
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%PC_SpdErr
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%PC_State
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%PitCom(1)
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%PitCom(2)
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%PitCom(3)     
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%SS_DelOmegaF
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%TestType
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%VS_LastGenTrq
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%VS_MechGenPwr
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%VS_SpdErrAr
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%VS_SpdErrBr
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%VS_SpdErr
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%VS_State
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%WE_Vw
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%WE_VwI
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%WE_VwIdot
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%Y_AccErr
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%Y_ErrLPFFast
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%Y_ErrLPFSlow
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%Y_MErr
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%Y_YawEndT
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%SD
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%Fl_PitCom
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%NACIMU_FA_AccF
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%Flp_Angle(1)
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%Flp_Angle(2)
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%Flp_Angle(3)
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%ACC_INFILE_SIZE
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%ACC_INFILE(:)
+
+           WRITE( Un, IOSTAT=ErrStat) objInst%instLPF
+           WRITE( Un, IOSTAT=ErrStat) objInst%instSecLPF
+           WRITE( Un, IOSTAT=ErrStat) objInst%instHPF
+           WRITE( Un, IOSTAT=ErrStat) objInst%instNotchSlopes
+           WRITE( Un, IOSTAT=ErrStat) objInst%instNotch
+           WRITE( Un, IOSTAT=ErrStat) objInst%instPI
+           
+           CLOSE ( Un )
+           
+        ENDIF
+      
+      END SUBROUTINE WriteRestartFile
+      
+      SUBROUTINE ReadRestartFile(LocalVar, CntrPar, objInst, PerfData, accINFILE, accINFILE_size)
+        USE ROSCO_Types, ONLY : LocalVariables, ControlParameters, ObjectInstances, PerformanceData
+      
+        TYPE(LocalVariables), INTENT(INOUT) :: LocalVar
+        TYPE(ControlParameters), INTENT(INOUT) :: CntrPar
+        TYPE(ObjectInstances), INTENT(INOUT) :: objInst
+        TYPE(PerformanceData), INTENT(INOUT) :: PerfData
+        INTEGER(4), INTENT(IN)                         :: accINFILE_size               ! size of DISCON input filename
+        CHARACTER(accINFILE_size),  INTENT(IN   )      :: accINFILE(accINFILE_size)    ! DISCON input filename  
+      
+        INTEGER(4), PARAMETER        :: Un            = 87                              ! I/O unit for pack/unpack (checkpoint & restart)
+        INTEGER(4)                   :: I                                               ! Generic index.  
+        CHARACTER(SIZE(accINFILE)-1) :: InFile    ! a Fortran version of the input C string (not considered an array here)    [subtract 1 for the C null-character]
+        INTEGER(4)                   :: ErrStat  
+        CHARACTER(128)               :: ErrMsg                                          ! a Fortran version of the C string argument (not considered an array here) [subtract 1 for the C null-character]
+        
+        InFile = TRANSFER( accINFILE(1:LEN(InFile)),  InFile )
+        I = INDEX(InFile,C_NULL_CHAR) - 1         ! if this has a c null character at the end...
+        IF ( I > 0 ) InFile = InFile(1:I)         ! remove it
+      
+        OPEN( Un, FILE=TRIM( InFile ), STATUS='OLD', FORM='UNFORMATTED', ACCESS='STREAM', IOSTAT=ErrStat, ACTION='READ' )
+      
+        IF ( ErrStat /= 0 ) THEN
+           ErrMsg  = 'Cannot open file "'//TRIM( InFile )//'". Another program may have locked it for writing.'
+           
+        ELSE
+
+            READ( Un, IOSTAT=ErrStat) LocalVar%FA_AccHPF
+           READ( Un, IOSTAT=ErrStat) LocalVar%FA_AccHPFI
+           READ( Un, IOSTAT=ErrStat) LocalVar%FA_PitCom(1)
+           READ( Un, IOSTAT=ErrStat) LocalVar%FA_PitCom(2)     
+           READ( Un, IOSTAT=ErrStat) LocalVar%FA_PitCom(3)
+           READ( Un, IOSTAT=ErrStat) LocalVar%GenSpeedF     
+           READ( Un, IOSTAT=ErrStat) LocalVar%GenTq
+           READ( Un, IOSTAT=ErrStat) LocalVar%GenTqMeas
+           READ( Un, IOSTAT=ErrStat) LocalVar%GenArTq
+           READ( Un, IOSTAT=ErrStat) LocalVar%GenBrTq
+           READ( Un, IOSTAT=ErrStat) LocalVar%GlobalState
+           READ( Un, IOSTAT=ErrStat) LocalVar%IPC_PitComF(1)
+           READ( Un, IOSTAT=ErrStat) LocalVar%IPC_PitComF(2)     
+           READ( Un, IOSTAT=ErrStat) LocalVar%IPC_PitComF(3)
+           READ( Un, IOSTAT=ErrStat) LocalVar%PC_KP
+           READ( Un, IOSTAT=ErrStat) LocalVar%PC_KI           
+           READ( Un, IOSTAT=ErrStat) LocalVar%PC_KD
+           READ( Un, IOSTAT=ErrStat) LocalVar%PC_TF
+           READ( Un, IOSTAT=ErrStat) LocalVar%PC_MaxPit
+           READ( Un, IOSTAT=ErrStat) LocalVar%PC_MinPit
+           READ( Un, IOSTAT=ErrStat) LocalVar%PC_PitComT
+           READ( Un, IOSTAT=ErrStat) LocalVar%PC_PitComT_IPC(1)
+           READ( Un, IOSTAT=ErrStat) LocalVar%PC_PitComT_IPC(2)
+           READ( Un, IOSTAT=ErrStat) LocalVar%PC_PitComT_IPC(3)     
+           READ( Un, IOSTAT=ErrStat) LocalVar%PC_PwrErr
+           READ( Un, IOSTAT=ErrStat) LocalVar%PC_SineExcitation
+           READ( Un, IOSTAT=ErrStat) LocalVar%PC_SpdErr
+           READ( Un, IOSTAT=ErrStat) LocalVar%PC_State
+           READ( Un, IOSTAT=ErrStat) LocalVar%PitCom(1)
+           READ( Un, IOSTAT=ErrStat) LocalVar%PitCom(2)
+           READ( Un, IOSTAT=ErrStat) LocalVar%PitCom(3)     
+           READ( Un, IOSTAT=ErrStat) LocalVar%SS_DelOmegaF
+           READ( Un, IOSTAT=ErrStat) LocalVar%TestType
+           READ( Un, IOSTAT=ErrStat) LocalVar%VS_LastGenTrq
+           READ( Un, IOSTAT=ErrStat) LocalVar%VS_MechGenPwr
+           READ( Un, IOSTAT=ErrStat) LocalVar%VS_SpdErrAr
+           READ( Un, IOSTAT=ErrStat) LocalVar%VS_SpdErrBr
+           READ( Un, IOSTAT=ErrStat) LocalVar%VS_SpdErr
+           READ( Un, IOSTAT=ErrStat) LocalVar%VS_State
+           READ( Un, IOSTAT=ErrStat) LocalVar%WE_Vw
+           READ( Un, IOSTAT=ErrStat) LocalVar%WE_VwI
+           READ( Un, IOSTAT=ErrStat) LocalVar%WE_VwIdot
+           READ( Un, IOSTAT=ErrStat) LocalVar%Y_AccErr
+           READ( Un, IOSTAT=ErrStat) LocalVar%Y_ErrLPFFast
+           READ( Un, IOSTAT=ErrStat) LocalVar%Y_ErrLPFSlow
+           READ( Un, IOSTAT=ErrStat) LocalVar%Y_MErr
+           READ( Un, IOSTAT=ErrStat) LocalVar%Y_YawEndT
+           READ( Un, IOSTAT=ErrStat) LocalVar%SD
+           READ( Un, IOSTAT=ErrStat) LocalVar%Fl_PitCom
+           READ( Un, IOSTAT=ErrStat) LocalVar%NACIMU_FA_AccF
+           READ( Un, IOSTAT=ErrStat) LocalVar%Flp_Angle(1)
+           READ( Un, IOSTAT=ErrStat) LocalVar%Flp_Angle(2)
+           READ( Un, IOSTAT=ErrStat) LocalVar%Flp_Angle(3)
+           READ( Un, IOSTAT=ErrStat) LocalVar%ACC_INFILE_SIZE
+           Allocate(LocalVar%ACC_INFILE(LocalVar%ACC_INFILE_SIZE))
+           READ( Un, IOSTAT=ErrStat) LocalVar%ACC_INFILE
+
+           READ( Un, IOSTAT=ErrStat) objInst%instLPF
+           READ( Un, IOSTAT=ErrStat) objInst%instSecLPF
+           READ( Un, IOSTAT=ErrStat) objInst%instHPF
+           READ( Un, IOSTAT=ErrStat) objInst%instNotchSlopes
+           READ( Un, IOSTAT=ErrStat) objInst%instNotch
+           READ( Un, IOSTAT=ErrStat) objInst%instPI
+           
+           CLOSE ( Un )
+           
+        ENDIF
+
+        CALL ReadControlParameterFileSub(CntrPar, LocalVar%ACC_INFILE, LocalVar%ACC_INFILE_SIZE)
+
+        IF (CntrPar%WE_Mode > 0) THEN
+           CALL READCpFile(CntrPar,PerfData)
+        ENDIF
+        
+      
+      END SUBROUTINE ReadRestartFile
+            
 END MODULE ReadSetParameters

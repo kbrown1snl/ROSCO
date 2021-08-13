@@ -59,6 +59,8 @@ TYPE(PerformanceData), SAVE           :: PerfData
 !------------------------------------------------------------------------------------------------------------------------------
 ! Read avrSWAP array into derived types/variables
 CALL ReadAvrSWAP(avrSWAP, LocalVar)
+write(*,*) 'iStatus = ', LocalVar%iStatus
+write(*,*) 'accINFILE = ', accINFILE
 CALL SetParameters(avrSWAP, aviFAIL, accINFILE, ErrMsg, SIZE(avcMSG), CntrPar, LocalVar, objInst, PerfData)
 CALL PreFilterMeasuredSignals(CntrPar, LocalVar, objInst)
 
@@ -76,7 +78,12 @@ IF ((LocalVar%iStatus >= 0) .AND. (aviFAIL >= 0))  THEN  ! Only compute control 
     CALL FlapControl(avrSWAP, CntrPar, LocalVar, objInst)
     
     CALL Debug(LocalVar, CntrPar, avrSWAP, RootName, SIZE(avcOUTNAME))
-END IF
+ELSEIF ((LocalVar%iStatus == -8) .AND. (aviFAIL >= 0))  THEN ! Write restart files
+    CALL WriteRestartFile(LocalVar, CntrPar, objInst, accINFILE, NINT(avrSWAP(50)))
+ELSEIF ((LocalVar%iStatus == -9) .AND. (aviFAIL >= 0))  THEN ! Read restart files
+   CALL ReadRestartFile(LocalVar, CntrPar, objInst, PerfData, accINFILE, NINT(avrSWAP(50)))
+ENDIF
+
 
 avcMSG = TRANSFER(TRIM(ErrMsg)//C_NULL_CHAR, avcMSG, SIZE(avcMSG))
 RETURN
