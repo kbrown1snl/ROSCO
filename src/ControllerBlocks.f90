@@ -221,7 +221,7 @@ CONTAINS
             F_WECornerFreq = 0.0333  ! Fix to 30 second time constant for now    
 
             ! Filter wind speed at hub height as directly passed from OpenFAST
-            LocalVar%WE_Vw = LPFilter(LocalVar%HorWindV, LocalVar%DT, F_WECornerFreq, LocalVar%iStatus, .FALSE., objInst%instLPF)
+            LocalVar%WE_Vw = LPFilter(LocalVar%HorWindV, LocalVar%DT, F_WECornerFreq, LocalVar%iStatus, LocalVar%restart, objInst%instLPF)
         ENDIF 
 
     END SUBROUTINE WindSpeedEstimator
@@ -246,7 +246,7 @@ CONTAINS
             DelOmega = ((LocalVar%BlPitch(1) - CntrPar%PC_MinPit)/0.524) * CntrPar%SS_VSGain - ((CntrPar%VS_RtTq - LocalVar%VS_LastGenTrq))/CntrPar%VS_RtTq * CntrPar%SS_PCGain ! Normalize to 30 degrees for now
             DelOmega = DelOmega * CntrPar%PC_RefSpd
             ! Filter
-            LocalVar%SS_DelOmegaF = LPFilter(DelOmega, LocalVar%DT, CntrPar%F_SSCornerFreq, LocalVar%iStatus, .FALSE., objInst%instLPF) 
+            LocalVar%SS_DelOmegaF = LPFilter(DelOmega, LocalVar%DT, CntrPar%F_SSCornerFreq, LocalVar%iStatus, LocalVar%restart, objInst%instLPF) 
         ELSE
             LocalVar%SS_DelOmegaF = 0 ! No setpoint smoothing
         ENDIF
@@ -271,10 +271,10 @@ CONTAINS
         ! Account for towertop motions in wind speed estimate
         !       Integrate Towertop Acceleration  
         ! dV_towertop = 
-        ! V_towertop = PIController(LocalVar%FA_Acc, 0.0, 1.0, -100.00, 100.00, LocalVar%DT, 0.0, .FALSE., objInst%instPI)
+        ! V_towertop = PIController(LocalVar%FA_Acc, 0.0, 1.0, -100.00, 100.00, LocalVar%DT, 0.0, LocalVar%restart, objInst%instPI)
 
         Vhat = LocalVar%WE_Vw
-        Vhatf = LPFilter(Vhat,LocalVar%DT,0.2,LocalVar%iStatus,.FALSE.,objInst%instLPF)
+        Vhatf = LPFilter(Vhat,LocalVar%DT,0.2,LocalVar%iStatus,LocalVar%restart,objInst%instLPF)
         
         ! Define minimum blade pitch angle as a function of estimated wind speed
         PitchSaturation = interp1d(CntrPar%PS_WindSpeeds, CntrPar%PS_BldPitchMin, Vhatf)

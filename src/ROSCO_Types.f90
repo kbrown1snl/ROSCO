@@ -195,6 +195,7 @@ TYPE, PUBLIC :: LocalVariables
     REAL(4)                             :: NACIMU_FA_AccF
     REAL(4)                             :: Flp_Angle(3)                 ! Flap Angle (rad)
     INTEGER(4)                          :: ACC_INFILE_SIZE
+    LOGICAL(4)                          :: restart
     CHARACTER, DIMENSION(:), ALLOCATABLE :: ACC_INFILE
     END TYPE LocalVariables
 
