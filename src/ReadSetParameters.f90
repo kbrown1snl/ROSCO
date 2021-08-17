@@ -257,7 +257,7 @@ CONTAINS
         ! ----- Torque controller reference errors -----
         ! Define VS reference generator speed [rad/s]
         IF (CntrPar%VS_ControlMode == 2) THEN
-            ! WE_Vw_f = LPFilter(LocalVar%We_Vw, LocalVar%DT, 0.625, LocalVar%iStatus, .FALSE., objInst%instLPF)
+            ! WE_Vw_f = LPFilter(LocalVar%We_Vw, LocalVar%DT, 0.625, LocalVar%iStatus, LocalVar%restart, objInst%instLPF)
             WE_Vw_f = LocalVar%We_Vw
             VS_RefSpd = (CntrPar%VS_TSRopt * WE_Vw_f / CntrPar%WE_BladeRadius) * CntrPar%WE_GearboxRatio
             VS_RefSpd = saturate(VS_RefSpd,CntrPar%VS_MinOMSpd, CntrPar%VS_RefSpd)
@@ -327,6 +327,8 @@ CONTAINS
             LocalVar%BlPitch(3) = LocalVar%PitCom(3)      
         ENDIF
 
+        ! Default to no restart
+        LocalVar%restart = .FALSE.
     END SUBROUTINE ReadAvrSWAP
     ! -----------------------------------------------------------------------------------
     ! Check for errors before any execution
@@ -555,6 +557,9 @@ CONTAINS
             Allocate(LocalVar%ACC_INFILE(LocalVar%ACC_INFILE_SIZE))
             LocalVar%ACC_INFILE = accINFILE
             
+            ! restart on first call
+            LocalVar%restart = .TRUE.
+
             CALL ReadControlParameterFileSub(CntrPar, accINFILE, NINT(avrSWAP(50)))
 
             IF (CntrPar%WE_Mode > 0) THEN
@@ -727,6 +732,14 @@ CONTAINS
            WRITE( Un, IOSTAT=ErrStat) LocalVar%ACC_INFILE_SIZE
            WRITE( Un, IOSTAT=ErrStat) LocalVar%ACC_INFILE(:)
 
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%WE%om_r
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%WE%v_t
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%WE%v_m
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%WE%v_h
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%WE%P
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%WE%xh
+           WRITE( Un, IOSTAT=ErrStat) LocalVar%WE%K
+
            WRITE( Un, IOSTAT=ErrStat) objInst%instLPF
            WRITE( Un, IOSTAT=ErrStat) objInst%instSecLPF
            WRITE( Un, IOSTAT=ErrStat) objInst%instHPF
@@ -824,6 +837,14 @@ CONTAINS
            Allocate(LocalVar%ACC_INFILE(LocalVar%ACC_INFILE_SIZE))
            READ( Un, IOSTAT=ErrStat) LocalVar%ACC_INFILE
 
+           READ( Un, IOSTAT=ErrStat) LocalVar%WE%om_r
+           READ( Un, IOSTAT=ErrStat) LocalVar%WE%v_t
+           READ( Un, IOSTAT=ErrStat) LocalVar%WE%v_m
+           READ( Un, IOSTAT=ErrStat) LocalVar%WE%v_h
+           READ( Un, IOSTAT=ErrStat) LocalVar%WE%P
+           READ( Un, IOSTAT=ErrStat) LocalVar%WE%xh
+           READ( Un, IOSTAT=ErrStat) LocalVar%WE%K
+           
            READ( Un, IOSTAT=ErrStat) objInst%instLPF
            READ( Un, IOSTAT=ErrStat) objInst%instSecLPF
            READ( Un, IOSTAT=ErrStat) objInst%instHPF
@@ -841,6 +862,8 @@ CONTAINS
            CALL READCpFile(CntrPar,PerfData)
         ENDIF
         
+        ! restart == true to re-initialize internal parameters
+        LocalVar%restart = .TRUE.
       
       END SUBROUTINE ReadRestartFile
             

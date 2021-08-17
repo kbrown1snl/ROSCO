@@ -119,10 +119,6 @@ CONTAINS
         REAL(4)                 :: F_WECornerFreq   ! Corner frequency (-3dB point) for first order low pass filter for measured hub height wind speed [Hz]
 
         !       Only used in EKF, if WE_Mode = 2
-        REAL(4), SAVE           :: om_r             ! Estimated rotor speed [rad/s]
-        REAL(4), SAVE           :: v_t              ! Estimated wind speed, turbulent component [m/s]
-        REAL(4), SAVE           :: v_m              ! Estimated wind speed, 10-minute averaged [m/s]
-        REAL(4), SAVE           :: v_h              ! Combined estimated wind speed [m/s]
         REAL(4)                 :: L                ! Turbulent length scale parameter [m]
         REAL(4)                 :: Ti               ! Turbulent intensity, [-]
         ! REAL(4), DIMENSION(3,3) :: I
@@ -134,13 +130,10 @@ CONTAINS
         REAL(4)                 :: lambda           ! tip-speed-ratio [rad]
         !           - Covariance matrices
         REAL(4), DIMENSION(3,3)         :: F        ! First order system jacobian 
-        REAL(4), DIMENSION(3,3), SAVE   :: P        ! Covariance estiamte 
         REAL(4), DIMENSION(1,3)         :: H        ! Output equation jacobian 
-        REAL(4), DIMENSION(3,1), SAVE   :: xh       ! Estimated state matrix
         REAL(4), DIMENSION(3,1)         :: dxh      ! Estimated state matrix deviation from previous timestep
         REAL(4), DIMENSION(3,3)         :: Q        ! Process noise covariance matrix
         REAL(4), DIMENSION(1,1)         :: S        ! Innovation covariance 
-        REAL(4), DIMENSION(3,1), SAVE   :: K        ! Kalman gain matrix
         REAL(4)                         :: R_m      ! Measurement noise covariance [(rad/s)^2]
         
         ! ---- Define wind speed estimate ---- 
@@ -163,57 +156,57 @@ CONTAINS
             Q = RESHAPE((/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/),(/3,3/))
             IF (LocalVar%iStatus == 0) THEN
                 ! Initialize recurring values
-                om_r = LocalVar%RotSpeed
-                v_t = 0.0
-                v_m = LocalVar%HorWindV
-                v_h = LocalVar%HorWindV
-                xh = RESHAPE((/om_r, v_t, v_m/),(/3,1/))
-                P = RESHAPE((/0.01, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 1.0/),(/3,3/))
-                K = RESHAPE((/0.0,0.0,0.0/),(/3,1/))
+                LocalVar%WE%om_r = LocalVar%RotSpeed
+                LocalVar%WE%v_t = 0.0
+                LocalVar%WE%v_m = LocalVar%HorWindV
+                LocalVar%WE%v_h = LocalVar%HorWindV
+                LocalVar%WE%xh = RESHAPE((/LocalVar%WE%om_r, LocalVar%WE%v_t, LocalVar%WE%v_m/),(/3,1/))
+                LocalVar%WE%P = RESHAPE((/0.01, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 1.0/),(/3,3/))
+                LocalVar%WE%K = RESHAPE((/0.0,0.0,0.0/),(/3,1/))
                 
             ELSE
                 ! Find estimated operating Cp and system pole
-                A_op = interp1d(CntrPar%WE_FOPoles_v,CntrPar%WE_FOPoles,v_h)
+                A_op = interp1d(CntrPar%WE_FOPoles_v,CntrPar%WE_FOPoles,LocalVar%WE%v_h)
 
                 ! TEST INTERP2D
-                lambda = LocalVar%RotSpeed * CntrPar%WE_BladeRadius/v_h
+                lambda = LocalVar%RotSpeed * CntrPar%WE_BladeRadius/LocalVar%WE%v_h
                 Cp_op = interp2d(PerfData%Beta_vec,PerfData%TSR_vec,PerfData%Cp_mat, LocalVar%BlPitch(1)*R2D, lambda )
                 Cp_op = max(0.0,Cp_op)
                 
                 ! Update Jacobian
                 F(1,1) = A_op
-                F(1,2) = 1.0/(2.0*CntrPar%WE_Jtot) * CntrPar%WE_RhoAir * PI *CntrPar%WE_BladeRadius**2.0 * Cp_op * 3.0 * v_h**2.0 * 1.0/om_r
-                F(1,3) = 1.0/(2.0*CntrPar%WE_Jtot) * CntrPar%WE_RhoAir * PI *CntrPar%WE_BladeRadius**2.0 * Cp_op * 3.0 * v_h**2.0 * 1.0/om_r
-                F(2,2) = PI * v_m/(2.0*L)
-                F(2,3) = PI * v_t/(2.0*L)
+                F(1,2) = 1.0/(2.0*CntrPar%WE_Jtot) * CntrPar%WE_RhoAir * PI *CntrPar%WE_BladeRadius**2.0 * Cp_op * 3.0 * LocalVar%WE%v_h**2.0 * 1.0/LocalVar%WE%om_r
+                F(1,3) = 1.0/(2.0*CntrPar%WE_Jtot) * CntrPar%WE_RhoAir * PI *CntrPar%WE_BladeRadius**2.0 * Cp_op * 3.0 * LocalVar%WE%v_h**2.0 * 1.0/LocalVar%WE%om_r
+                F(2,2) = PI * LocalVar%WE%v_m/(2.0*L)
+                F(2,3) = PI * LocalVar%WE%v_t/(2.0*L)
 
                 ! Update process noise covariance
                 Q(1,1) = 0.00001
-                Q(2,2) =(PI * (v_m**3.0) * (Ti**2.0)) / L
+                Q(2,2) =(PI * (LocalVar%WE%v_m**3.0) * (Ti**2.0)) / L
                 Q(3,3) = (2.0**2.0)/600.0
 
                 ! Prediction update
                 Tau_r = AeroDynTorque(LocalVar,CntrPar,PerfData)
-                a = PI * v_m/(2.0*L)
+                a = PI * LocalVar%WE%v_m/(2.0*L)
                 dxh(1,1) = 1.0/CntrPar%WE_Jtot * (Tau_r - CntrPar%WE_GearboxRatio * LocalVar%VS_LastGenTrq)
-                dxh(2,1) = -a*v_t
+                dxh(2,1) = -a*LocalVar%WE%v_t
                 dxh(3,1) = 0.0
                 
-                xh = xh + LocalVar%DT * dxh ! state update
-                P = P + LocalVar%DT*(MATMUL(F,P) + MATMUL(P,TRANSPOSE(F)) + Q - MATMUL(K * R_m, TRANSPOSE(K))) 
+                LocalVar%WE%xh = LocalVar%WE%xh + LocalVar%DT * dxh ! state update
+                LocalVar%WE%P = LocalVar%WE%P + LocalVar%DT*(MATMUL(F,LocalVar%WE%P) + MATMUL(LocalVar%WE%P,TRANSPOSE(F)) + Q - MATMUL(LocalVar%WE%K * R_m, TRANSPOSE(LocalVar%WE%K))) 
 
                 ! Measurement update
-                S = MATMUL(H,MATMUL(P,TRANSPOSE(H))) + R_m        ! NJA: (H*T*H') \approx 0
-                K = MATMUL(P,TRANSPOSE(H))/S(1,1)
-                xh = xh + K*(LocalVar%GenSpeedF/CntrPar%WE_GearboxRatio - om_r)
-                P = MATMUL(identity(3) - MATMUL(K,H),P)
+                S = MATMUL(H,MATMUL(LocalVar%WE%P,TRANSPOSE(H))) + R_m        ! NJA: (H*T*H') \approx 0
+                LocalVar%WE%K = MATMUL(LocalVar%WE%P,TRANSPOSE(H))/S(1,1)
+                LocalVar%WE%xh = LocalVar%WE%xh + LocalVar%WE%K*(LocalVar%GenSpeedF/CntrPar%WE_GearboxRatio - LocalVar%WE%om_r)
+                LocalVar%WE%P = MATMUL(identity(3) - MATMUL(LocalVar%WE%K,H),LocalVar%WE%P)
                 
                 ! Wind Speed Estimate
-                om_r = xh(1,1)
-                v_t = xh(2,1)
-                v_m = xh(3,1)
-                v_h = v_t + v_m
-                LocalVar%WE_Vw = v_m + v_t
+                LocalVar%WE%om_r = LocalVar%WE%xh(1,1)
+                LocalVar%WE%v_t = LocalVar%WE%xh(2,1)
+                LocalVar%WE%v_m = LocalVar%WE%xh(3,1)
+                LocalVar%WE%v_h = LocalVar%WE%v_t + LocalVar%WE%v_m
+                LocalVar%WE_Vw = LocalVar%WE%v_m + LocalVar%WE%v_t
             ENDIF
 
         ELSE        
