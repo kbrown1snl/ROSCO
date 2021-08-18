@@ -50,10 +50,6 @@ CONTAINS
         INTEGER(4)                      :: K            ! Index used for looping through blades.
         REAL(4), Save                :: PitComT_Last 
 
-        write(*,*) 'iStatus = ' , LocalVar%iStatus
-        write(*,*) 'LocalVar%PC_PitComT  = ', LocalVar%PC_PitComT
-        write(*,*) 'CntrPar%PC_GS_angles, CntrPar%PC_GS_KP = ', CntrPar%PC_GS_angles, CntrPar%PC_GS_KP
-        
         ! ------- Blade Pitch Controller --------
         ! Load PC State
         IF (LocalVar%PC_State == 1) THEN ! PI BldPitch control

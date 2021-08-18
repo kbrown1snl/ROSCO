@@ -59,8 +59,6 @@ TYPE(PerformanceData), SAVE           :: PerfData
 !------------------------------------------------------------------------------------------------------------------------------
 ! Read avrSWAP array into derived types/variables
 CALL ReadAvrSWAP(avrSWAP, LocalVar)
-write(*,*) 'iStatus = ', LocalVar%iStatus
-write(*,*) 'accINFILE = ', accINFILE
 CALL SetParameters(avrSWAP, aviFAIL, accINFILE, ErrMsg, SIZE(avcMSG), CntrPar, LocalVar, objInst, PerfData)
 CALL PreFilterMeasuredSignals(CntrPar, LocalVar, objInst)
 
