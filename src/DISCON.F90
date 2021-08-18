@@ -58,6 +58,11 @@ TYPE(PerformanceData), SAVE           :: PerfData
 ! Main control calculations
 !------------------------------------------------------------------------------------------------------------------------------
 ! Read avrSWAP array into derived types/variables
+
+IF ((LocalVar%iStatus == -9) .AND. (aviFAIL >= 0))  THEN ! Read restart files
+    CALL ReadRestartFile(LocalVar, CntrPar, objInst, PerfData, accINFILE, NINT(avrSWAP(50)))
+END IF
+    
 CALL ReadAvrSWAP(avrSWAP, LocalVar)
 CALL SetParameters(avrSWAP, aviFAIL, accINFILE, ErrMsg, SIZE(avcMSG), CntrPar, LocalVar, objInst, PerfData)
 CALL PreFilterMeasuredSignals(CntrPar, LocalVar, objInst)
@@ -67,9 +72,7 @@ IF ((LocalVar%iStatus >= 0) .AND. (aviFAIL >= 0))  THEN  ! Only compute control 
     
     CALL StateMachine(CntrPar, LocalVar)
     CALL WindSpeedEstimator(LocalVar, CntrPar, objInst, PerfData)
-    
     CALL SetpointSmoother(LocalVar, CntrPar, objInst)
-
     CALL VariableSpeedControl(avrSWAP, CntrPar, LocalVar, objInst)
     CALL PitchControl(avrSWAP, CntrPar, LocalVar, objInst)
     CALL YawRateControl(avrSWAP, CntrPar, LocalVar, objInst)
@@ -78,8 +81,6 @@ IF ((LocalVar%iStatus >= 0) .AND. (aviFAIL >= 0))  THEN  ! Only compute control 
     CALL Debug(LocalVar, CntrPar, avrSWAP, RootName, SIZE(avcOUTNAME))
 ELSEIF ((LocalVar%iStatus == -8) .AND. (aviFAIL >= 0))  THEN ! Write restart files
     CALL WriteRestartFile(LocalVar, CntrPar, objInst, accINFILE, NINT(avrSWAP(50)))
-ELSEIF ((LocalVar%iStatus == -9) .AND. (aviFAIL >= 0))  THEN ! Read restart files
-   CALL ReadRestartFile(LocalVar, CntrPar, objInst, PerfData, accINFILE, NINT(avrSWAP(50)))
 ENDIF
 
 
