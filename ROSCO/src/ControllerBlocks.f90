@@ -247,11 +247,11 @@ CONTAINS
                 
             ELSE
                 ! Find estimated operating Cp and system pole
-                A_op = interp1d(CntrPar%WE_FOPoles_v,CntrPar%WE_FOPoles,LocalVar%WE%v_h)
+                A_op = interp1d(CntrPar%WE_FOPoles_v,CntrPar%WE_FOPoles,LocalVar%WE%v_h, ErrVar)
 
                 ! TEST INTERP2D
                 lambda = LocalVar%RotSpeed * CntrPar%WE_BladeRadius/LocalVar%WE%v_h
-                Cp_op = interp2d(PerfData%Beta_vec,PerfData%TSR_vec,PerfData%Cp_mat, LocalVar%BlPitch(1)*R2D, lambda )
+                Cp_op = interp2d(PerfData%Beta_vec,PerfData%TSR_vec,PerfData%Cp_mat, LocalVar%BlPitch(1)*R2D, lambda, ErrVar)
                 Cp_op = max(0.0,Cp_op)
                 
                 ! Update Jacobian
@@ -291,19 +291,18 @@ CONTAINS
                 LocalVar%WE_Vw = LocalVar%WE%v_m + LocalVar%WE%v_t
             ENDIF
 
-                IF (ieee_is_nan(v_h)) THEN
-                    om_r = LocalVar%RotSpeedF
-                    v_t = 0.0
-                    v_m = LocalVar%HorWindV
-                    v_h = LocalVar%HorWindV
-                    LocalVar%WE_Vw = v_m + v_t
+                IF (ieee_is_nan(LocalVar%WE%v_h)) THEN
+                    LocalVar%WE%om_r = LocalVar%RotSpeedF
+                    LocalVar%WE%v_t = 0.0
+                    LocalVar%WE%v_m = LocalVar%HorWindV
+                    LocalVar%WE%v_h = LocalVar%HorWindV
+                    LocalVar%WE_Vw = LocalVar%WE%v_m + LocalVar%WE%v_t
                 ENDIF
 
-            ENDIF
             ! Debug Outputs
             DebugVar%WE_Cp = Cp_op
-            DebugVar%WE_Vm = v_m
-            DebugVar%WE_Vt = v_t
+            DebugVar%WE_Vm = LocalVar%WE%v_m
+            DebugVar%WE_Vt = LocalVar%WE%v_t
             DebugVar%WE_lambda = lambda
         ELSE        
             ! Define Variables
