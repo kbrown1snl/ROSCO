@@ -65,7 +65,7 @@ RootName = TRANSFER(avcOUTNAME, RootName)
 ! Read avrSWAP array into derived types/variables
 
 IF ( (NINT(avrSWAP(1)) == -9) .AND. (aviFAIL >= 0))  THEN ! Read restart files
-    CALL ReadRestartFile(LocalVar, CntrPar, objInst, PerfData, accINFILE, NINT(avrSWAP(50)))
+    CALL ReadRestartFile(avrSWAP, LocalVar, CntrPar, objInst, PerfData, RootName, SIZE(avcOUTNAME), ErrVar)
 END IF
     
 CALL ReadAvrSWAP(avrSWAP, LocalVar)
@@ -87,7 +87,10 @@ IF ((LocalVar%iStatus >= 0) .AND. (ErrVar%aviFAIL >= 0))  THEN  ! Only compute c
     CALL YawRateControl(avrSWAP, CntrPar, LocalVar, objInst)
     CALL FlapControl(avrSWAP, CntrPar, LocalVar, objInst)
     CALL Debug(LocalVar, CntrPar, DebugVar, avrSWAP, RootName, SIZE(avcOUTNAME))
-END IF
+
+ELSEIF ((LocalVar%iStatus == -8) .AND. (ErrVar%aviFAIL >= 0))  THEN ! Write restart files
+    CALL WriteRestartFile(LocalVar, CntrPar, objInst, RootName, SIZE(avcOUTNAME))
+ENDIF
 
 ! Add RoutineName to error message
 IF (ErrVar%aviFAIL < 0) THEN
