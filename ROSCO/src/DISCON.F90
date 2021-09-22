@@ -86,11 +86,13 @@ IF ((LocalVar%iStatus >= 0) .AND. (ErrVar%aviFAIL >= 0))  THEN  ! Only compute c
     CALL PitchControl(avrSWAP, CntrPar, LocalVar, objInst, DebugVar, ErrVar)
     CALL YawRateControl(avrSWAP, CntrPar, LocalVar, objInst)
     CALL FlapControl(avrSWAP, CntrPar, LocalVar, objInst)
-    CALL Debug(LocalVar, CntrPar, DebugVar, avrSWAP, RootName, SIZE(avcOUTNAME))
-
+    
 ELSEIF ((LocalVar%iStatus == -8) .AND. (ErrVar%aviFAIL >= 0))  THEN ! Write restart files
     CALL WriteRestartFile(LocalVar, CntrPar, objInst, RootName, SIZE(avcOUTNAME))
 ENDIF
+
+! Run Debug script 
+CALL Debug(LocalVar, CntrPar, DebugVar, avrSWAP, RootName, SIZE(avcOUTNAME))
 
 ! Add RoutineName to error message
 IF (ErrVar%aviFAIL < 0) THEN
