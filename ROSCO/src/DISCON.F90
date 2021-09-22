@@ -63,6 +63,11 @@ RootName = TRANSFER(avcOUTNAME, RootName)
 ! Main control calculations
 !------------------------------------------------------------------------------------------------------------------------------
 ! Read avrSWAP array into derived types/variables
+
+IF ( (NINT(avrSWAP(1)) == -9) .AND. (aviFAIL >= 0))  THEN ! Read restart files
+    CALL ReadRestartFile(LocalVar, CntrPar, objInst, PerfData, accINFILE, NINT(avrSWAP(50)))
+END IF
+    
 CALL ReadAvrSWAP(avrSWAP, LocalVar)
 
 ! Set Control Parameters

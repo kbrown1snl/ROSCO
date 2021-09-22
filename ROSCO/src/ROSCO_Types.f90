@@ -132,6 +132,17 @@ TYPE, PUBLIC :: ControlParameters
 
 END TYPE ControlParameters
 
+type :: WE                                    
+        REAL(4)                   :: om_r             ! Estimated rotor speed [rad/s]
+        REAL(4)                   :: v_t              ! Estimated wind speed, turbulent component [m/s]
+        REAL(4)                   :: v_m              ! Estimated wind speed, 10-minute averaged [m/s]
+        REAL(4)                   :: v_h              ! Combined estimated wind speed [m/s]
+        REAL(4), DIMENSION(3,3)   :: P                ! Covariance estiamte 
+        REAL(4), DIMENSION(3,1)   :: xh               ! Estimated state matrix
+        REAL(4), DIMENSION(3,1)   :: K                ! Kalman gain matrix
+
+end type WE
+
 TYPE, PUBLIC :: LocalVariables
     ! ---------- From avrSWAP ----------
     INTEGER(4)                      :: iStatus
@@ -200,6 +211,11 @@ TYPE, PUBLIC :: LocalVariables
     REAL(8)                             :: NACIMU_FA_AccF
     REAL(8)                             :: FA_AccF
     REAL(8)                             :: Flp_Angle(3)                 ! Flap Angle (rad)
+    INTEGER(4)                          :: ACC_INFILE_SIZE
+    CHARACTER, DIMENSION(:), ALLOCATABLE :: ACC_INFILE
+    LOGICAL(4)                          :: restart
+
+    type(WE)                            ::
     END TYPE LocalVariables
 
 TYPE, PUBLIC :: ObjectInstances
