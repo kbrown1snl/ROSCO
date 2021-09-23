@@ -68,7 +68,9 @@ CONTAINS
     END FUNCTION ratelimit
 
 !-------------------------------------------------------------------------------------------------------------------------------
-    REAL FUNCTION PIController(error, kp, ki, minValue, maxValue, DT, I0, reset, inst)
+    REAL FUNCTION PIController(error, kp, ki, minValue, maxValue, DT, I0, piP, reset, inst)
+        USE ROSCO_Types, ONLY : piParams
+
     ! PI controller, with output saturation
 
         IMPLICIT NONE
@@ -81,28 +83,27 @@ CONTAINS
         REAL(8), INTENT(IN)         :: DT
         INTEGER(4), INTENT(INOUT)   :: inst
         REAL(8), INTENT(IN)         :: I0
+        TYPE(piParams), INTENT(INOUT) :: piP
         LOGICAL, INTENT(IN)         :: reset     
         ! Allocate local variables
         INTEGER(4)                      :: i                                            ! Counter for making arrays
         REAL(8)                         :: PTerm                                        ! Proportional term
-        REAL(8), DIMENSION(99), SAVE    :: ITerm = (/ (real(9999.9), i = 1,99) /)       ! Integral term, current.
-        REAL(8), DIMENSION(99), SAVE    :: ITermLast = (/ (real(9999.9), i = 1,99) /)   ! Integral term, the last time this controller was called. Supports 99 separate instances.
-        INTEGER(4), DIMENSION(99), SAVE :: FirstCall = (/ (1, i=1,99) /)                ! First call of this function?
+        ! REAL(8), DIMENSION(99), SAVE    :: ITerm = (/ (real(9999.9), i = 1,99) /)       ! Integral term, current.
+        ! REAL(8), DIMENSION(99), SAVE    :: ITermLast = (/ (real(9999.9), i = 1,99) /)   ! Integral term, the last time this controller was called. Supports 99 separate instances.
         
         ! Initialize persistent variables/arrays, and set inital condition for integrator term
-        IF ((FirstCall(inst) == 1) .OR. reset) THEN
-            ITerm(inst) = I0
-            ITermLast(inst) = I0
+        IF (reset) THEN
+            piP%ITerm(inst) = I0
+            piP%ITermLast(inst) = I0
             
-            FirstCall(inst) = 0
             PIController = I0
         ELSE
             PTerm = kp*error
-            ITerm(inst) = ITerm(inst) + DT*ki*error
-            ITerm(inst) = saturate(ITerm(inst), minValue, maxValue)
-            PIController = saturate(PTerm + ITerm(inst), minValue, maxValue)
+            piP%ITerm(inst) = piP%ITerm(inst) + DT*ki*error
+            piP%ITerm(inst) = saturate(piP%ITerm(inst), minValue, maxValue)
+            PIController = saturate(PTerm + piP%ITerm(inst), minValue, maxValue)
         
-            ITermLast(inst) = ITerm(inst)
+            piP%ITermLast(inst) = piP%ITerm(inst)
         END IF
         inst = inst + 1
         

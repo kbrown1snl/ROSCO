@@ -143,6 +143,30 @@ type :: WE
 
 end type WE
 
+type :: FilterParameters
+    REAL(8), DIMENSION(99)        :: lpf1_a1                   ! First order filter - Denominator coefficient 1
+    REAL(8), DIMENSION(99)        :: lpf1_a0                   ! First order filter - Denominator coefficient 0
+    REAL(8), DIMENSION(99)        :: lpf1_b1                   ! First order filter - Numerator coefficient 1
+    REAL(8), DIMENSION(99)        :: lpf1_b0                   ! First order filter - Numerator coefficient 0
+    REAL(8), DIMENSION(99)        :: lpf1_InputSignalLast      ! First order filter - Previous input
+    REAL(8), DIMENSION(99)        :: lpf1_OutputSignalLast     ! First order filter - Previous output
+    REAL(8), DIMENSION(99)        :: lpf2_a2                   ! Second order filter - Denominator coefficient 2
+    REAL(8), DIMENSION(99)        :: lpf2_a1                   ! Second order filter - Denominator coefficient 1
+    REAL(8), DIMENSION(99)        :: lpf2_a0                   ! Second order filter - Denominator coefficient 0
+    REAL(8), DIMENSION(99)        :: lpf2_b2                   ! Second order filter - Numerator coefficient 2
+    REAL(8), DIMENSION(99)        :: lpf2_b1                   ! Second order filter - Numerator coefficient 1
+    REAL(8), DIMENSION(99)        :: lpf2_b0                   ! Second order filter - Numerator coefficient 0
+    REAL(8), DIMENSION(99)        :: lpf2_InputSignalLast2      ! Second order filter - Previous input 2
+    REAL(8), DIMENSION(99)        :: lpf2_OutputSignalLast2     ! Second order filter - Previous output 2
+    REAL(8), DIMENSION(99)        :: lpf2_InputSignalLast1      ! Second order filter - Previous input 1 
+    REAL(8), DIMENSION(99)        :: lpf2_OutputSignalLast1     ! Second order filter - Previous output 1
+end type FilterParameters
+
+type :: piParams
+    REAL(8), DIMENSION(99)        :: ITerm                   ! Denominator coefficient 1
+    REAL(8), DIMENSION(99)        :: ITermLast                   ! Denominator coefficient 1
+end type piParams
+
 TYPE, PUBLIC :: LocalVariables
     ! ---------- From avrSWAP ----------
     INTEGER(4)                   :: iStatus
@@ -178,7 +202,8 @@ TYPE, PUBLIC :: LocalVariables
     REAL(8)                               :: PC_MaxPit                    ! Maximum pitch setting in pitch controller (variable) [rad].
     REAL(8)                               :: PC_MinPit                    ! Minimum pitch setting in pitch controller (variable) [rad].
     REAL(8)                               :: PC_PitComT                   ! Total command pitch based on the sum of the proportional and integral terms [rad].
-    REAL(8)                               :: PC_PitComTF                   ! Filtered Total command pitch based on the sum of the proportional and integral terms [rad].
+    REAL(8)                               :: PC_PitComT_Last              ! Last total command pitch based on the sum of the proportional and integral terms [rad].
+    REAL(8)                               :: PC_PitComTF                  ! Filtered total command pitch based on the sum of the proportional and integral terms [rad].
     REAL(8)                               :: PC_PitComT_IPC(3)            ! Total command pitch based on the sum of the proportional and integral terms, including IPC term [rad].
     REAL(8)                               :: PC_PwrErr                    ! Power error with respect to rated power [W]
     REAL(8)                               :: PC_SineExcitation            ! Sine contribution to pitch signal
@@ -216,6 +241,8 @@ TYPE, PUBLIC :: LocalVariables
     LOGICAL(4)                            :: restart
 
     type(WE)                            :: WE
+    type(FilterParameters)              :: FP
+    type(piParams)                      :: piP
     END TYPE LocalVariables
 
 TYPE, PUBLIC :: ObjectInstances

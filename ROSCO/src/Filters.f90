@@ -26,11 +26,14 @@ MODULE Filters
 
 CONTAINS
 !-------------------------------------------------------------------------------------------------------------------------------
-    REAL FUNCTION LPFilter(InputSignal, DT, CornerFreq, iStatus, reset, inst)
+    REAL FUNCTION LPFilter(InputSignal, DT, CornerFreq, FP, iStatus, reset, inst)
     ! Discrete time Low-Pass Filter of the form:
     !                               Continuous Time Form:   H(s) = CornerFreq/(1 + CornerFreq)
     !                               Discrete Time Form:     H(z) = (b1z + b0) / (a1*z + a0)
     !
+        USE ROSCO_Types, ONLY : FilterParameters
+        TYPE(FilterParameters),       INTENT(INOUT)       :: FP 
+
         REAL(8), INTENT(IN)         :: InputSignal
         REAL(8), INTENT(IN)         :: DT                       ! time step [s]
         REAL(8), INTENT(IN)         :: CornerFreq               ! corner frequency [rad/s]
@@ -38,41 +41,34 @@ CONTAINS
         INTEGER(4), INTENT(INOUT)   :: inst                     ! Instance number. Every instance of this function needs to have an unique instance number to ensure instances don't influence each other.
         LOGICAL(4), INTENT(IN)      :: reset                    ! Reset the filter to the input signal
 
-            ! Local
-        REAL(8), DIMENSION(99), SAVE    :: a1                   ! Denominator coefficient 1
-        REAL(8), DIMENSION(99), SAVE    :: a0                   ! Denominator coefficient 0
-        REAL(8), DIMENSION(99), SAVE    :: b1                    ! Numerator coefficient 1
-        REAL(8), DIMENSION(99), SAVE    :: b0                    ! Numerator coefficient 0 
-
-        REAL(8), DIMENSION(99), SAVE    :: InputSignalLast      ! Input signal the last time this filter was called. Supports 99 separate instances.
-        REAL(8), DIMENSION(99), SAVE    :: OutputSignalLast ! Output signal the last time this filter was called. Supports 99 separate instances.
-
             ! Initialization
         IF ((iStatus == 0) .OR. reset) THEN   
-            OutputSignalLast(inst) = InputSignal
-            InputSignalLast(inst) = InputSignal
-            a1(inst) = 2 + CornerFreq*DT
-            a0(inst) = CornerFreq*DT - 2
-            b1(inst) = CornerFreq*DT
-            b0(inst) = CornerFreq*DT
+            FP%lpf1_OutputSignalLast(inst) = InputSignal
+            FP%lpf1_InputSignalLast(inst) = InputSignal
+            FP%lpf1_a1(inst) = 2 + CornerFreq*DT
+            FP%lpf1_a0(inst) = CornerFreq*DT - 2
+            FP%lpf1_b1(inst) = CornerFreq*DT
+            FP%lpf1_b0(inst) = CornerFreq*DT
         ENDIF
 
         ! Define coefficients
 
         ! Filter
-        LPFilter = 1.0/a1(inst) * (-a0(inst)*OutputSignalLast(inst) + b1(inst)*InputSignal + b0(inst)*InputSignalLast(inst))
+        LPFilter = 1.0/FP%lpf1_a1(inst) * (-FP%lpf1_a0(inst)*FP%lpf1_OutputSignalLast(inst) + FP%lpf1_b1(inst)*InputSignal + FP%lpf1_b0(inst)*FP%lpf1_InputSignalLast(inst))
 
         ! Save signals for next time step
-        InputSignalLast(inst)  = InputSignal
-        OutputSignalLast(inst) = LPFilter
+        FP%lpf1_InputSignalLast(inst)  = InputSignal
+        FP%lpf1_OutputSignalLast(inst) = LPFilter
         inst = inst + 1
 
     END FUNCTION LPFilter
 !-------------------------------------------------------------------------------------------------------------------------------
-    REAL FUNCTION SecLPFilter(InputSignal, DT, CornerFreq, Damp, iStatus, reset, inst)
+    REAL FUNCTION SecLPFilter(InputSignal, DT, CornerFreq, Damp, FP, iStatus, reset, inst)
     ! Discrete time Low-Pass Filter of the form:
     !                               Continuous Time Form:   H(s) = CornerFreq^2/(s^2 + 2*CornerFreq*Damp*s + CornerFreq^2)
     !                               Discrete Time From:     H(z) = (b2*z^2 + b1*z + b0) / (a2*z^2 + a1*z + a0)
+        USE ROSCO_Types, ONLY : FilterParameters
+        TYPE(FilterParameters),       INTENT(INOUT)       :: FP 
         REAL(8), INTENT(IN)         :: InputSignal
         REAL(8), INTENT(IN)         :: DT                       ! time step [s]
         REAL(8), INTENT(IN)         :: CornerFreq               ! corner frequency [rad/s]
@@ -81,46 +77,30 @@ CONTAINS
         INTEGER(4), INTENT(INOUT)   :: inst                     ! Instance number. Every instance of this function needs to have an unique instance number to ensure instances don't influence each other.
         LOGICAL(4), INTENT(IN)      :: reset                    ! Reset the filter to the input signal
 
-        ! Local
-        REAL(8), DIMENSION(99), SAVE    :: a2                   ! Denominator coefficient 2
-        REAL(8), DIMENSION(99), SAVE    :: a1                   ! Denominator coefficient 1
-        REAL(8), DIMENSION(99), SAVE    :: a0                   ! Denominator coefficient 0
-        REAL(8), DIMENSION(99), SAVE    :: b2                   ! Numerator coefficient 2
-        REAL(8), DIMENSION(99), SAVE    :: b1                   ! Numerator coefficient 1
-        REAL(8), DIMENSION(99), SAVE    :: b0                   ! Numerator coefficient 0 
-        REAL(8), DIMENSION(99), SAVE    :: InputSignalLast1     ! Input signal the last time this filter was called. Supports 99 separate instances.
-        REAL(8), DIMENSION(99), SAVE    :: InputSignalLast2     ! Input signal the next to last time this filter was called. Supports 99 separate instances.
-        REAL(8), DIMENSION(99), SAVE    :: OutputSignalLast1    ! Output signal the last time this filter was called. Supports 99 separate instances.
-        REAL(8), DIMENSION(99), SAVE    :: OutputSignalLast2    ! Output signal the next to last time this filter was called. Supports 99 separate instances.
-
         ! Initialization
         IF ((iStatus == 0) .OR. reset )  THEN
-            OutputSignalLast1(inst)  = InputSignal
-            OutputSignalLast2(inst)  = InputSignal
-            InputSignalLast1(inst)   = InputSignal
-            InputSignalLast2(inst)   = InputSignal
+            FP%lpf2_OutputSignalLast1(inst)  = InputSignal
+            FP%lpf2_OutputSignalLast2(inst)  = InputSignal
+            FP%lpf2_InputSignalLast1(inst)   = InputSignal
+            FP%lpf2_InputSignalLast2(inst)   = InputSignal
             
             ! Coefficients
-            a2(inst) = DT**2.0*CornerFreq**2.0 + 4.0 + 4.0*Damp*CornerFreq*DT
-            a1(inst) = 2.0*DT**2.0*CornerFreq**2.0 - 8.0
-            a0(inst) = DT**2.0*CornerFreq**2.0 + 4.0 - 4.0*Damp*CornerFreq*DT
-            b2(inst) = DT**2.0*CornerFreq**2.0
-            b1(inst) = 2.0*DT**2.0*CornerFreq**2.0
-            b0(inst) = DT**2.0*CornerFreq**2.0
+            FP%lpf2_a2(inst) = DT**2.0*CornerFreq**2.0 + 4.0 + 4.0*Damp*CornerFreq*DT
+            FP%lpf2_a1(inst) = 2.0*DT**2.0*CornerFreq**2.0 - 8.0
+            FP%lpf2_a0(inst) = DT**2.0*CornerFreq**2.0 + 4.0 - 4.0*Damp*CornerFreq*DT
+            FP%lpf2_b2(inst) = DT**2.0*CornerFreq**2.0
+            FP%lpf2_b1(inst) = 2.0*DT**2.0*CornerFreq**2.0
+            FP%lpf2_b0(inst) = DT**2.0*CornerFreq**2.0
         ENDIF
 
         ! Filter
-        SecLPFilter = 1.0/a2(inst) * (b2(inst)*InputSignal + b1(inst)*InputSignalLast1(inst) + b0(inst)*InputSignalLast2(inst) - a1(inst)*OutputSignalLast1(inst) - a0(inst)*OutputSignalLast2(inst))
-
-        ! SecLPFilter = 1/(4+4*DT*Damp*CornerFreq+DT**2*CornerFreq**2) * ( (8-2*DT**2*CornerFreq**2)*OutputSignalLast1(inst) &
-        !                 + (-4+4*DT*Damp*CornerFreq-DT**2*CornerFreq**2)*OutputSignalLast2(inst) + (DT**2*CornerFreq**2)*InputSignal &
-        !                     + (2*DT**2*CornerFreq**2)*InputSignalLast1(inst) + (DT**2*CornerFreq**2)*InputSignalLast2(inst) )
+        SecLPFilter = 1.0/FP%lpf2_a2(inst) * (FP%lpf2_b2(inst)*InputSignal + FP%lpf2_b1(inst)*FP%lpf2_InputSignalLast1(inst) + FP%lpf2_b0(inst)*FP%lpf2_InputSignalLast2(inst) - FP%lpf2_a1(inst)*FP%lpf2_OutputSignalLast1(inst) - FP%lpf2_a0(inst)*FP%lpf2_OutputSignalLast2(inst))
 
         ! Save signals for next time step
-        InputSignalLast2(inst)   = InputSignalLast1(inst)
-        InputSignalLast1(inst)   = InputSignal
-        OutputSignalLast2(inst)  = OutputSignalLast1(inst)
-        OutputSignalLast1(inst)  = SecLPFilter
+        FP%lpf2_InputSignalLast2(inst)   = FP%lpf2_InputSignalLast1(inst)
+        FP%lpf2_InputSignalLast1(inst)   = InputSignal
+        FP%lpf2_OutputSignalLast2(inst)  = FP%lpf2_OutputSignalLast1(inst)
+        FP%lpf2_OutputSignalLast1(inst)  = SecLPFilter
 
         inst = inst + 1
 
@@ -261,11 +241,11 @@ CONTAINS
         ! Filter the HSS (generator) and LSS (rotor) speed measurement:
         ! Apply Low-Pass Filter (choice between first- and second-order low-pass filter)
         IF (CntrPar%F_LPFType == 1) THEN
-            LocalVar%GenSpeedF = LPFilter(LocalVar%GenSpeed, LocalVar%DT, CntrPar%F_LPFCornerFreq, LocalVar%iStatus, LocalVar%restart, objInst%instLPF)
-            LocalVar%RotSpeedF = LPFilter(LocalVar%RotSpeed, LocalVar%DT, CntrPar%F_LPFCornerFreq, LocalVar%iStatus, LocalVar%restart, objInst%instLPF)
+            LocalVar%GenSpeedF = LPFilter(LocalVar%GenSpeed, LocalVar%DT, CntrPar%F_LPFCornerFreq, LocalVar%FP, LocalVar%iStatus, LocalVar%restart, objInst%instLPF)
+            LocalVar%RotSpeedF = LPFilter(LocalVar%RotSpeed, LocalVar%DT, CntrPar%F_LPFCornerFreq, LocalVar%FP, LocalVar%iStatus, LocalVar%restart, objInst%instLPF)
         ELSEIF (CntrPar%F_LPFType == 2) THEN   
-            LocalVar%GenSpeedF = SecLPFilter(LocalVar%GenSpeed, LocalVar%DT, CntrPar%F_LPFCornerFreq, CntrPar%F_LPFDamping, LocalVar%iStatus, LocalVar%restart, objInst%instSecLPF) ! Second-order low-pass filter on generator speed
-            LocalVar%RotSpeedF = SecLPFilter(LocalVar%RotSpeed, LocalVar%DT, CntrPar%F_LPFCornerFreq, CntrPar%F_LPFDamping, LocalVar%iStatus, LocalVar%restart, objInst%instSecLPF) ! Second-order low-pass filter on generator speed
+            LocalVar%GenSpeedF = SecLPFilter(LocalVar%GenSpeed, LocalVar%DT, CntrPar%F_LPFCornerFreq, CntrPar%F_LPFDamping, LocalVar%FP, LocalVar%iStatus, LocalVar%restart, objInst%instSecLPF) ! Second-order low-pass filter on generator speed
+            LocalVar%RotSpeedF = SecLPFilter(LocalVar%RotSpeed, LocalVar%DT, CntrPar%F_LPFCornerFreq, CntrPar%F_LPFDamping, LocalVar%FP, LocalVar%iStatus, LocalVar%restart, objInst%instSecLPF) ! Second-order low-pass filter on generator speed
         ENDIF
         ! Apply Notch Fitler
         IF (CntrPar%F_NotchType == 1 .OR. CntrPar%F_NotchType == 3) THEN
@@ -275,13 +255,8 @@ CONTAINS
         ! Filtering the tower fore-aft acceleration signal 
         IF (CntrPar%Fl_Mode == 1) THEN
             ! Force to start at 0
-            IF (LocalVar%iStatus == 0) THEN
-                LocalVar%NacIMU_FA_AccF = SecLPFilter(0., LocalVar%DT, CntrPar%F_FlCornerFreq(1), CntrPar%F_FlCornerFreq(2), LocalVar%iStatus, LocalVar%restart, objInst%instSecLPF) ! Fixed Damping
-                LocalVar%FA_AccF = SecLPFilter(0., LocalVar%DT, CntrPar%F_FlCornerFreq(1), CntrPar%F_FlCornerFreq(2), LocalVar%iStatus, LocalVar%restart, objInst%instSecLPF) ! Fixed Damping
-            ELSE
-                LocalVar%NacIMU_FA_AccF = SecLPFilter(LocalVar%NacIMU_FA_Acc, LocalVar%DT, CntrPar%F_FlCornerFreq(1), CntrPar%F_FlCornerFreq(2), LocalVar%iStatus, LocalVar%restart, objInst%instSecLPF) ! Fixed Damping
-                LocalVar%FA_AccF = SecLPFilter(LocalVar%FA_Acc, LocalVar%DT, CntrPar%F_FlCornerFreq(1), CntrPar%F_FlCornerFreq(2), LocalVar%iStatus, LocalVar%restart, objInst%instSecLPF) ! Fixed Damping
-            ENDIF
+            LocalVar%NacIMU_FA_AccF = SecLPFilter(LocalVar%NacIMU_FA_Acc, LocalVar%DT, CntrPar%F_FlCornerFreq(1), CntrPar%F_FlCornerFreq(2), LocalVar%FP, LocalVar%iStatus, LocalVar%restart, objInst%instSecLPF) ! Fixed Damping
+            LocalVar%FA_AccF = SecLPFilter(LocalVar%FA_Acc, LocalVar%DT, CntrPar%F_FlCornerFreq(1), CntrPar%F_FlCornerFreq(2), LocalVar%FP, LocalVar%iStatus, LocalVar%restart, objInst%instSecLPF) ! Fixed Damping
             LocalVar%NacIMU_FA_AccF = HPFilter(LocalVar%NacIMU_FA_AccF, LocalVar%DT, 0.0167, LocalVar%iStatus, LocalVar%restart, objInst%instHPF) 
             LocalVar%FA_AccF = HPFilter(LocalVar%FA_AccF, LocalVar%DT, 0.0167, LocalVar%iStatus, LocalVar%restart, objInst%instHPF) 
             
@@ -294,12 +269,12 @@ CONTAINS
         LocalVar%FA_AccHPF = HPFilter(LocalVar%FA_Acc, LocalVar%DT, CntrPar%FA_HPFCornerFreq, LocalVar%iStatus, LocalVar%restart, objInst%instHPF)
         
         ! Filter Wind Speed Estimator Signal
-        LocalVar%We_Vw_F = LPFilter(LocalVar%WE_Vw, LocalVar%DT, 0.209, LocalVar%iStatus,LocalVar%restart,objInst%instLPF) ! 30 second time constant
+        LocalVar%We_Vw_F = LPFilter(LocalVar%WE_Vw, LocalVar%DT, 0.209, LocalVar%FP, LocalVar%iStatus, LocalVar%restart, objInst%instLPF) ! 30 second time constant
 
 
         ! Control commands (used by WSE, mostly)
-        LocalVar%VS_LastGenTrqF = SecLPFilter(LocalVar%VS_LastGenTrq, LocalVar%DT, CntrPar%F_LPFCornerFreq, 0.7, LocalVar%iStatus, LocalVar%restart, objInst%instSecLPF)
-        LocalVar%PC_PitComTF    = SecLPFilter(LocalVar%PC_PitComT, LocalVar%DT, CntrPar%F_LPFCornerFreq*0.25, 0.7, LocalVar%iStatus, LocalVar%restart, objInst%instSecLPF)
+        LocalVar%VS_LastGenTrqF = SecLPFilter(LocalVar%VS_LastGenTrq, LocalVar%DT, CntrPar%F_LPFCornerFreq, 0.7, LocalVar%FP, LocalVar%iStatus, LocalVar%restart, objInst%instSecLPF)
+        LocalVar%PC_PitComTF    = SecLPFilter(LocalVar%PC_PitComT, LocalVar%DT, CntrPar%F_LPFCornerFreq*0.25, 0.7, LocalVar%FP, LocalVar%iStatus, LocalVar%restart, objInst%instSecLPF)
 
     END SUBROUTINE PreFilterMeasuredSignals
     END MODULE Filters

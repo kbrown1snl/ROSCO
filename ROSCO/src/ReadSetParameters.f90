@@ -84,6 +84,13 @@ CONTAINS
             LocalVar%BlPitch(3) = LocalVar%PitCom(3)      
         ENDIF
 
+        ! IF ((LocalVar%iStatus == 0) .OR. (LocalVar%iStatus == -9)) THEN
+        IF (LocalVar%iStatus == 0) THEN
+            LocalVar%restart = .True.
+        ELSE
+            LocalVar%restart = .False.
+        ENDIF
+
     END SUBROUTINE ReadAvrSWAP    
 ! -----------------------------------------------------------------------------------
     ! Define parameters for control actions
@@ -920,7 +927,6 @@ CONTAINS
             ErrMsg  = 'Cannot open file "'//TRIM( InFile )//'". Another program may have locked it for writing.'
             
         ELSE
-            print *, 'Writing restart file'
             ! From AVR SWAP
             WRITE( Un, IOSTAT=ErrStat) LocalVar%iStatus
             WRITE( Un, IOSTAT=ErrStat) LocalVar%Time
@@ -962,6 +968,7 @@ CONTAINS
             WRITE( Un, IOSTAT=ErrStat) LocalVar%PC_MaxPit
             WRITE( Un, IOSTAT=ErrStat) LocalVar%PC_MinPit
             WRITE( Un, IOSTAT=ErrStat) LocalVar%PC_PitComT
+            WRITE( Un, IOSTAT=ErrStat) LocalVar%PC_PitComT_Last
             WRITE( Un, IOSTAT=ErrStat) LocalVar%PC_PitComTF
             WRITE( Un, IOSTAT=ErrStat) LocalVar%PC_PitComT_IPC(1)
             WRITE( Un, IOSTAT=ErrStat) LocalVar%PC_PitComT_IPC(2)
@@ -1019,6 +1026,27 @@ CONTAINS
             WRITE( Un, IOSTAT=ErrStat) objInst%instNotchSlopes
             WRITE( Un, IOSTAT=ErrStat) objInst%instNotch
             WRITE( Un, IOSTAT=ErrStat) objInst%instPI
+
+            WRITE( Un, IOSTAT=ErrStat) LocalVar%FP%lpf1_a1
+            WRITE( Un, IOSTAT=ErrStat) LocalVar%FP%lpf1_a0
+            WRITE( Un, IOSTAT=ErrStat) LocalVar%FP%lpf1_b1
+            WRITE( Un, IOSTAT=ErrStat) LocalVar%FP%lpf1_b0
+            WRITE( Un, IOSTAT=ErrStat) LocalVar%FP%lpf1_InputSignalLast
+            WRITE( Un, IOSTAT=ErrStat) LocalVar%FP%lpf1_OutputSignalLast
+            WRITE( Un, IOSTAT=ErrStat) LocalVar%FP%lpf2_a2
+            WRITE( Un, IOSTAT=ErrStat) LocalVar%FP%lpf2_a1
+            WRITE( Un, IOSTAT=ErrStat) LocalVar%FP%lpf2_a0
+            WRITE( Un, IOSTAT=ErrStat) LocalVar%FP%lpf2_b2
+            WRITE( Un, IOSTAT=ErrStat) LocalVar%FP%lpf2_b1
+            WRITE( Un, IOSTAT=ErrStat) LocalVar%FP%lpf2_b0
+            WRITE( Un, IOSTAT=ErrStat) LocalVar%FP%lpf2_InputSignalLast2
+            WRITE( Un, IOSTAT=ErrStat) LocalVar%FP%lpf2_OutputSignalLast2
+            WRITE( Un, IOSTAT=ErrStat) LocalVar%FP%lpf2_InputSignalLast1
+            WRITE( Un, IOSTAT=ErrStat) LocalVar%FP%lpf2_OutputSignalLast1
+
+            WRITE( Un, IOSTAT=ErrStat) LocalVar%piP%ITerm
+            WRITE( Un, IOSTAT=ErrStat) LocalVar%piP%ITermLast
+
             CLOSE ( Un )
 
         ENDIF
@@ -1055,7 +1083,6 @@ CONTAINS
             
         ELSE
             ! From AVR SWAP
-            print *, 'READING RESTART FILE: ', InFile
             READ( Un, IOSTAT=ErrStat) LocalVar%iStatus
             READ( Un, IOSTAT=ErrStat) LocalVar%Time
             READ( Un, IOSTAT=ErrStat) LocalVar%DT
@@ -1096,6 +1123,7 @@ CONTAINS
             READ( Un, IOSTAT=ErrStat) LocalVar%PC_MaxPit
             READ( Un, IOSTAT=ErrStat) LocalVar%PC_MinPit
             READ( Un, IOSTAT=ErrStat) LocalVar%PC_PitComT
+            READ( Un, IOSTAT=ErrStat) LocalVar%PC_PitComT_Last
             READ( Un, IOSTAT=ErrStat) LocalVar%PC_PitComTF
             READ( Un, IOSTAT=ErrStat) LocalVar%PC_PitComT_IPC(1)
             READ( Un, IOSTAT=ErrStat) LocalVar%PC_PitComT_IPC(2)
@@ -1154,8 +1182,28 @@ CONTAINS
             READ( Un, IOSTAT=ErrStat) objInst%instNotchSlopes
             READ( Un, IOSTAT=ErrStat) objInst%instNotch
             READ( Un, IOSTAT=ErrStat) objInst%instPI
+
+            READ( Un, IOSTAT=ErrStat) LocalVar%FP%lpf1_a1
+            READ( Un, IOSTAT=ErrStat) LocalVar%FP%lpf1_a0
+            READ( Un, IOSTAT=ErrStat) LocalVar%FP%lpf1_b1
+            READ( Un, IOSTAT=ErrStat) LocalVar%FP%lpf1_b0
+            READ( Un, IOSTAT=ErrStat) LocalVar%FP%lpf1_InputSignalLast
+            READ( Un, IOSTAT=ErrStat) LocalVar%FP%lpf1_OutputSignalLast
+            READ( Un, IOSTAT=ErrStat) LocalVar%FP%lpf2_a2
+            READ( Un, IOSTAT=ErrStat) LocalVar%FP%lpf2_a1
+            READ( Un, IOSTAT=ErrStat) LocalVar%FP%lpf2_a0
+            READ( Un, IOSTAT=ErrStat) LocalVar%FP%lpf2_b2
+            READ( Un, IOSTAT=ErrStat) LocalVar%FP%lpf2_b1
+            READ( Un, IOSTAT=ErrStat) LocalVar%FP%lpf2_b0
+            READ( Un, IOSTAT=ErrStat) LocalVar%FP%lpf2_InputSignalLast2
+            READ( Un, IOSTAT=ErrStat) LocalVar%FP%lpf2_OutputSignalLast2
+            READ( Un, IOSTAT=ErrStat) LocalVar%FP%lpf2_InputSignalLast1
+            READ( Un, IOSTAT=ErrStat) LocalVar%FP%lpf2_OutputSignalLast1
+
+            READ( Un, IOSTAT=ErrStat) LocalVar%piP%ITerm
+            READ( Un, IOSTAT=ErrStat) LocalVar%piP%ITermLast
+
             CLOSE ( Un )
-            print *, 'Finished reading restart file'
         ENDIF
 
         ! Read Parameter files
@@ -1163,9 +1211,6 @@ CONTAINS
         IF (CntrPar%WE_Mode > 0) THEN
             CALL READCpFile(CntrPar, PerfData, ErrVar)
         ENDIF
-        
-        ! restart == true to re-initialize internal parameters
-        LocalVar%restart = .TRUE.
         
     END SUBROUTINE ReadRestartFile
 
