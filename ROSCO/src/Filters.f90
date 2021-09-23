@@ -106,8 +106,10 @@ CONTAINS
 
     END FUNCTION SecLPFilter
 !-------------------------------------------------------------------------------------------------------------------------------
-    REAL FUNCTION HPFilter( InputSignal, DT, CornerFreq, iStatus, reset, inst)
+    REAL FUNCTION HPFilter( InputSignal, DT, CornerFreq, FP, iStatus, reset, inst)
     ! Discrete time High-Pass Filter
+        USE ROSCO_Types, ONLY : FilterParameters
+        TYPE(FilterParameters),       INTENT(INOUT)       :: FP 
 
         REAL(8), INTENT(IN)     :: InputSignal
         REAL(8), INTENT(IN)     :: DT                       ! time step [s]
@@ -117,28 +119,28 @@ CONTAINS
         LOGICAL(4), INTENT(IN)  :: reset                    ! Reset the filter to the input signal
         ! Local
         REAL(8)                         :: K                        ! Constant gain
-        REAL(8), DIMENSION(99), SAVE    :: InputSignalLast      ! Input signal the last time this filter was called. Supports 99 separate instances.
-        REAL(8), DIMENSION(99), SAVE    :: OutputSignalLast ! Output signal the last time this filter was called. Supports 99 separate instances.
 
         ! Initialization
         IF ((iStatus == 0) .OR. reset)  THEN
-            OutputSignalLast(inst) = InputSignal
-            InputSignalLast(inst) = InputSignal
+            FP%hpf_OutputSignalLast(inst) = InputSignal
+            FP%hpf_InputSignalLast(inst) = InputSignal
         ENDIF
         K = 2.0 / DT
 
         ! Body
-        HPFilter = K/(CornerFreq + K)*InputSignal - K/(CornerFreq + K)*InputSignalLast(inst) - (CornerFreq - K)/(CornerFreq + K)*OutputSignalLast(inst)
+        HPFilter = K/(CornerFreq + K)*InputSignal - K/(CornerFreq + K)*FP%hpf_InputSignalLast(inst) - (CornerFreq - K)/(CornerFreq + K)*FP%hpf_OutputSignalLast(inst)
 
         ! Save signals for next time step
-        InputSignalLast(inst)   = InputSignal
-        OutputSignalLast(inst)  = HPFilter
+        FP%HPF_InputSignalLast(inst)   = InputSignal
+        FP%HPF_OutputSignalLast(inst)  = HPFilter
         inst = inst + 1
 
     END FUNCTION HPFilter
 !-------------------------------------------------------------------------------------------------------------------------------
-    REAL FUNCTION NotchFilterSlopes(InputSignal, DT, CornerFreq, Damp, iStatus, reset, inst)
+    REAL FUNCTION NotchFilterSlopes(InputSignal, DT, CornerFreq, Damp, FP, iStatus, reset, inst)
     ! Discrete time inverted Notch Filter with descending slopes, G = CornerFreq*s/(Damp*s^2+CornerFreq*s+Damp*CornerFreq^2)
+        USE ROSCO_Types, ONLY : FilterParameters
+        TYPE(FilterParameters),       INTENT(INOUT)       :: FP 
 
         REAL(8), INTENT(IN)     :: InputSignal
         REAL(8), INTENT(IN)     :: DT                       ! time step [s]
@@ -147,46 +149,38 @@ CONTAINS
         INTEGER, INTENT(IN)     :: iStatus                  ! A status flag set by the simulation as follows: 0 if this is the first call, 1 for all subsequent time steps, -1 if this is the final call at the end of the simulation.
         INTEGER, INTENT(INOUT)  :: inst                     ! Instance number. Every instance of this function needs to have an unique instance number to ensure instances don't influence each other.
         LOGICAL(4), INTENT(IN)  :: reset                    ! Reset the filter to the input signal
-        ! Local
-        REAL(8), DIMENSION(99), SAVE :: b2, b0, a2, a1, a0    ! Input signal the last time this filter was called. Supports 99 separate instances.
-        REAL(8), DIMENSION(99), SAVE :: InputSignalLast1    ! Input signal the last time this filter was called. Supports 99 separate instances.
-        REAL(8), DIMENSION(99), SAVE :: InputSignalLast2    ! Input signal the next to last time this filter was called. Supports 99 separate instances.
-        REAL(8), DIMENSION(99), SAVE :: OutputSignalLast1   ! Output signal the last time this filter was called. Supports 99 separate instances.
-        REAL(8), DIMENSION(99), SAVE :: OutputSignalLast2   ! Output signal the next to last time this filter was called. Supports 99 separate instances.
-        
+
         ! Initialization
         IF ((iStatus == 0) .OR. reset) THEN
-            OutputSignalLast1(inst)  = InputSignal
-            OutputSignalLast2(inst)  = InputSignal
-            InputSignalLast1(inst)   = InputSignal
-            InputSignalLast2(inst)   = InputSignal
-            b2(inst) = 2.0 * DT * CornerFreq
-            b0(inst) = -b2(inst)
-            a2(inst) = Damp*DT**2.0*CornerFreq**2.0 + 2.0*DT*CornerFreq + 4.0*Damp
-            a1(inst) = 2.0*Damp*DT**2.0*CornerFreq**2.0 - 8.0*Damp
-            a0(inst) = Damp*DT**2.0*CornerFreq**2.0 - 2*DT*CornerFreq + 4.0*Damp
+            FP%nfs_OutputSignalLast1(inst)  = InputSignal
+            FP%nfs_OutputSignalLast2(inst)  = InputSignal
+            FP%nfs_InputSignalLast1(inst)   = InputSignal
+            FP%nfs_InputSignalLast2(inst)   = InputSignal
+            FP%nfs_b2(inst) = 2.0 * DT * CornerFreq
+            FP%nfs_b0(inst) = -FP%nfs_b2(inst)
+            FP%nfs_a2(inst) = Damp*DT**2.0*CornerFreq**2.0 + 2.0*DT*CornerFreq + 4.0*Damp
+            FP%nfs_a1(inst) = 2.0*Damp*DT**2.0*CornerFreq**2.0 - 8.0*Damp
+            FP%nfs_a0(inst) = Damp*DT**2.0*CornerFreq**2.0 - 2*DT*CornerFreq + 4.0*Damp
         ENDIF
 
-        NotchFilterSlopes = 1.0/a2(inst) * (b2(inst)*InputSignal + b0(inst)*InputSignalLast2(inst) &
-                            - a1(inst)*OutputSignalLast1(inst)  - a0(inst)*OutputSignalLast2(inst))
-        ! Body
-        ! NotchFilterSlopes = 1.0/(4.0+2.0*DT*Damp*CornerFreq+DT**2.0*CornerFreq**2.0) * ( (8.0-2.0*DT**2.0*CornerFreq**2.0)*OutputSignalLast1(inst) &
-        !                 + (-4.0+2.0*DT*Damp*CornerFreq-DT**2.0*CornerFreq**2.0)*OutputSignalLast2(inst) + &
-        !                     (2.0*DT*Damp*CornerFreq)*InputSignal + (-2.0*DT*Damp*CornerFreq)*InputSignalLast2(inst) )
+        NotchFilterSlopes = 1.0/FP%nfs_a2(inst) * (FP%nfs_b2(inst)*InputSignal + FP%nfs_b0(inst)*FP%nfs_InputSignalLast2(inst) &
+                            - FP%nfs_a1(inst)*FP%nfs_OutputSignalLast1(inst)  - FP%nfs_a0(inst)*FP%nfs_OutputSignalLast2(inst))
 
         ! Save signals for next time step
-        InputSignalLast2(inst)   = InputSignalLast1(inst)
-        InputSignalLast1(inst)   = InputSignal          !Save input signal for next time step
-        OutputSignalLast2(inst)  = OutputSignalLast1(inst)      !Save input signal for next time step
-        OutputSignalLast1(inst)  = NotchFilterSlopes
+        FP%nfs_InputSignalLast2(inst)   = FP%nfs_InputSignalLast1(inst)
+        FP%nfs_InputSignalLast1(inst)   = InputSignal          !Save input signal for next time step
+        FP%nfs_OutputSignalLast2(inst)  = FP%nfs_OutputSignalLast1(inst)      !Save input signal for next time step
+        FP%nfs_OutputSignalLast1(inst)  = NotchFilterSlopes
         inst = inst + 1
 
     END FUNCTION NotchFilterSlopes
 !-------------------------------------------------------------------------------------------------------------------------------
-    REAL FUNCTION NotchFilter(InputSignal, DT, omega, betaNum, betaDen, iStatus, reset, inst)
+    REAL FUNCTION NotchFilter(InputSignal, DT, omega, betaNum, betaDen, FP, iStatus, reset, inst)
     ! Discrete time Notch Filter 
     !                               Continuous Time Form: G(s) = (s^2 + 2*omega*betaNum*s + omega^2)/(s^2 + 2*omega*betaDen*s + omega^2)
     !                               Discrete Time Form:   H(z) = (b2*z^2 +b1*z^2 + b0*z)/((z^2 +a1*z^2 + a0*z))
+        USE ROSCO_Types, ONLY : FilterParameters
+        TYPE(FilterParameters),       INTENT(INOUT)       :: FP 
 
         REAL(8), INTENT(IN)     :: InputSignal
         REAL(8), INTENT(IN)     :: DT                       ! time step [s]
@@ -197,34 +191,30 @@ CONTAINS
         INTEGER, INTENT(INOUT)  :: inst                     ! Instance number. Every instance of this function needs to have an unique instance number to ensure instances don't influence each other.
         LOGICAL(4), INTENT(IN)  :: reset                    ! Reset the filter to the input signal
         ! Local
-        REAL(8), DIMENSION(99), SAVE    :: K, b2, b1, b0, a1, a0    ! Constant gain
-        REAL(8), DIMENSION(99), SAVE    :: InputSignalLast1         ! Input signal the last time this filter was called. Supports 99 separate instances.
-        REAL(8), DIMENSION(99), SAVE    :: InputSignalLast2         ! Input signal the next to last time this filter was called. Supports 99 separate instances.
-        REAL(8), DIMENSION(99), SAVE    :: OutputSignalLast1        ! Output signal the last time this filter was called. Supports 99 separate instances.
-        REAL(8), DIMENSION(99), SAVE    :: OutputSignalLast2        ! Output signal the next to last time this filter was called. Supports 99 separate instances.
+        REAL(8)                         :: K                        ! Constant gain
 
         ! Initialization
+        K = 2.0/DT
         IF ((iStatus == 0) .OR. reset) THEN
-            OutputSignalLast1(inst)  = InputSignal
-            OutputSignalLast2(inst)  = InputSignal
-            InputSignalLast1(inst)   = InputSignal
-            InputSignalLast2(inst)   = InputSignal
-            K(inst) = 2.0/DT
-            b2(inst) = (K(inst)**2.0 + 2.0*omega*BetaNum*K(inst) + omega**2.0)/(K(inst)**2.0 + 2.0*omega*BetaDen*K(inst) + omega**2.0)
-            b1(inst) = (2.0*omega**2.0 - 2.0*K(inst)**2.0)  / (K(inst)**2.0 + 2.0*omega*BetaDen*K(inst) + omega**2.0);
-            b0(inst) = (K(inst)**2.0 - 2.0*omega*BetaNum*K(inst) + omega**2.0) / (K(inst)**2.0 + 2.0*omega*BetaDen*K(inst) + omega**2.0)
-            a1(inst) = (2.0*omega**2.0 - 2.0*K(inst)**2.0)  / (K(inst)**2.0 + 2.0*omega*BetaDen*K(inst) + omega**2.0)
-            a0(inst) = (K(inst)**2.0 - 2.0*omega*BetaDen*K(inst) + omega**2.0)/ (K(inst)**2.0 + 2.0*omega*BetaDen*K(inst) + omega**2.0)
+            FP%nf_OutputSignalLast1(inst)  = InputSignal
+            FP%nf_OutputSignalLast2(inst)  = InputSignal
+            FP%nf_InputSignalLast1(inst)   = InputSignal
+            FP%nf_InputSignalLast2(inst)   = InputSignal
+            FP%nf_b2(inst) = (K**2.0 + 2.0*omega*BetaNum*K + omega**2.0)/(K**2.0 + 2.0*omega*BetaDen*K + omega**2.0)
+            FP%nf_b1(inst) = (2.0*omega**2.0 - 2.0*K**2.0)  / (K**2.0 + 2.0*omega*BetaDen*K + omega**2.0);
+            FP%nf_b0(inst) = (K**2.0 - 2.0*omega*BetaNum*K + omega**2.0) / (K**2.0 + 2.0*omega*BetaDen*K + omega**2.0)
+            FP%nf_a1(inst) = (2.0*omega**2.0 - 2.0*K**2.0)  / (K**2.0 + 2.0*omega*BetaDen*K + omega**2.0)
+            FP%nf_a0(inst) = (K**2.0 - 2.0*omega*BetaDen*K + omega**2.0)/ (K**2.0 + 2.0*omega*BetaDen*K + omega**2.0)
         ENDIF
         
         ! Body
-        NotchFilter = b2(inst)*InputSignal + b1(inst)*InputSignalLast1(inst) + b0(inst)*InputSignalLast2(inst) - a1(inst)*OutputSignalLast1(inst) - a0(inst)*OutputSignalLast2(inst)
+        NotchFilter = FP%nf_b2(inst)*InputSignal + FP%nf_b1(inst)*FP%nf_InputSignalLast1(inst) + FP%nf_b0(inst)*FP%nf_InputSignalLast2(inst) - FP%nf_a1(inst)*FP%nf_OutputSignalLast1(inst) - FP%nf_a0(inst)*FP%nf_OutputSignalLast2(inst)
 
         ! Save signals for next time step
-        InputSignalLast2(inst)   = InputSignalLast1(inst)
-        InputSignalLast1(inst)   = InputSignal                  ! Save input signal for next time step
-        OutputSignalLast2(inst)  = OutputSignalLast1(inst)      ! Save input signal for next time step
-        OutputSignalLast1(inst)  = NotchFilter
+        FP%nf_InputSignalLast2(inst)   = FP%nf_InputSignalLast1(inst)
+        FP%nf_InputSignalLast1(inst)   = InputSignal                  ! Save input signal for next time step
+        FP%nf_OutputSignalLast2(inst)  = FP%nf_OutputSignalLast1(inst)      ! Save input signal for next time step
+        FP%nf_OutputSignalLast1(inst)  = NotchFilter
         inst = inst + 1
 
     END FUNCTION NotchFilter
@@ -249,7 +239,7 @@ CONTAINS
         ENDIF
         ! Apply Notch Fitler
         IF (CntrPar%F_NotchType == 1 .OR. CntrPar%F_NotchType == 3) THEN
-            LocalVar%GenSpeedF = NotchFilter(LocalVar%GenSpeedF, LocalVar%DT, CntrPar%F_NotchCornerFreq, CntrPar%F_NotchBetaNumDen(1), CntrPar%F_NotchBetaNumDen(2), LocalVar%iStatus, LocalVar%restart, objInst%instNotch)
+            LocalVar%GenSpeedF = NotchFilter(LocalVar%GenSpeedF, LocalVar%DT, CntrPar%F_NotchCornerFreq, CntrPar%F_NotchBetaNumDen(1), CntrPar%F_NotchBetaNumDen(2), LocalVar%FP, LocalVar%iStatus, LocalVar%restart, objInst%instNotch)
         ENDIF
 
         ! Filtering the tower fore-aft acceleration signal 
@@ -257,16 +247,16 @@ CONTAINS
             ! Force to start at 0
             LocalVar%NacIMU_FA_AccF = SecLPFilter(LocalVar%NacIMU_FA_Acc, LocalVar%DT, CntrPar%F_FlCornerFreq(1), CntrPar%F_FlCornerFreq(2), LocalVar%FP, LocalVar%iStatus, LocalVar%restart, objInst%instSecLPF) ! Fixed Damping
             LocalVar%FA_AccF = SecLPFilter(LocalVar%FA_Acc, LocalVar%DT, CntrPar%F_FlCornerFreq(1), CntrPar%F_FlCornerFreq(2), LocalVar%FP, LocalVar%iStatus, LocalVar%restart, objInst%instSecLPF) ! Fixed Damping
-            LocalVar%NacIMU_FA_AccF = HPFilter(LocalVar%NacIMU_FA_AccF, LocalVar%DT, 0.0167, LocalVar%iStatus, LocalVar%restart, objInst%instHPF) 
-            LocalVar%FA_AccF = HPFilter(LocalVar%FA_AccF, LocalVar%DT, 0.0167, LocalVar%iStatus, LocalVar%restart, objInst%instHPF) 
+            LocalVar%NacIMU_FA_AccF = HPFilter(LocalVar%NacIMU_FA_AccF, LocalVar%DT, 0.0167, LocalVar%FP, LocalVar%iStatus, LocalVar%restart, objInst%instHPF) 
+            LocalVar%FA_AccF = HPFilter(LocalVar%FA_AccF, LocalVar%DT, 0.0167, LocalVar%FP, LocalVar%iStatus, LocalVar%restart, objInst%instHPF) 
             
             IF (CntrPar%F_NotchType >= 2) THEN
-                LocalVar%NACIMU_FA_AccF = NotchFilter(LocalVar%NacIMU_FA_AccF, LocalVar%DT, CntrPar%F_NotchCornerFreq, CntrPar%F_NotchBetaNumDen(1), CntrPar%F_NotchBetaNumDen(2), LocalVar%iStatus, LocalVar%restart, objInst%instNotch) ! Fixed Damping
-                LocalVar%FA_AccF = NotchFilter(LocalVar%FA_AccF, LocalVar%DT, CntrPar%F_NotchCornerFreq, CntrPar%F_NotchBetaNumDen(1), CntrPar%F_NotchBetaNumDen(2), LocalVar%iStatus, LocalVar%restart, objInst%instNotch) ! Fixed Damping
+                LocalVar%NACIMU_FA_AccF = NotchFilter(LocalVar%NacIMU_FA_AccF, LocalVar%DT, CntrPar%F_NotchCornerFreq, CntrPar%F_NotchBetaNumDen(1), CntrPar%F_NotchBetaNumDen(2), LocalVar%FP, LocalVar%iStatus, LocalVar%restart, objInst%instNotch) ! Fixed Damping
+                LocalVar%FA_AccF = NotchFilter(LocalVar%FA_AccF, LocalVar%DT, CntrPar%F_NotchCornerFreq, CntrPar%F_NotchBetaNumDen(1), CntrPar%F_NotchBetaNumDen(2), LocalVar%FP, LocalVar%iStatus, LocalVar%restart, objInst%instNotch) ! Fixed Damping
             ENDIF
         ENDIF
 
-        LocalVar%FA_AccHPF = HPFilter(LocalVar%FA_Acc, LocalVar%DT, CntrPar%FA_HPFCornerFreq, LocalVar%iStatus, LocalVar%restart, objInst%instHPF)
+        LocalVar%FA_AccHPF = HPFilter(LocalVar%FA_Acc, LocalVar%DT, CntrPar%FA_HPFCornerFreq, LocalVar%FP, LocalVar%iStatus, LocalVar%restart, objInst%instHPF)
         
         ! Filter Wind Speed Estimator Signal
         LocalVar%We_Vw_F = LPFilter(LocalVar%WE_Vw, LocalVar%DT, 0.209, LocalVar%FP, LocalVar%iStatus, LocalVar%restart, objInst%instLPF) ! 30 second time constant

@@ -156,15 +156,37 @@ type :: FilterParameters
     REAL(8), DIMENSION(99)        :: lpf2_b2                   ! Second order filter - Numerator coefficient 2
     REAL(8), DIMENSION(99)        :: lpf2_b1                   ! Second order filter - Numerator coefficient 1
     REAL(8), DIMENSION(99)        :: lpf2_b0                   ! Second order filter - Numerator coefficient 0
-    REAL(8), DIMENSION(99)        :: lpf2_InputSignalLast2      ! Second order filter - Previous input 2
-    REAL(8), DIMENSION(99)        :: lpf2_OutputSignalLast2     ! Second order filter - Previous output 2
-    REAL(8), DIMENSION(99)        :: lpf2_InputSignalLast1      ! Second order filter - Previous input 1 
-    REAL(8), DIMENSION(99)        :: lpf2_OutputSignalLast1     ! Second order filter - Previous output 1
+    REAL(8), DIMENSION(99)        :: lpf2_InputSignalLast2     ! Second order filter - Previous input 2
+    REAL(8), DIMENSION(99)        :: lpf2_OutputSignalLast2    ! Second order filter - Previous output 2
+    REAL(8), DIMENSION(99)        :: lpf2_InputSignalLast1     ! Second order filter - Previous input 1 
+    REAL(8), DIMENSION(99)        :: lpf2_OutputSignalLast1    ! Second order filter - Previous output 1
+    REAL(8), DIMENSION(99)        :: hpf_InputSignalLast       ! High pass filter - Previous output 1
+    REAL(8), DIMENSION(99)        :: hpf_OutputSignalLast      ! High pass filter - Previous output 1
+    REAL(8), DIMENSION(99)        :: nfs_OutputSignalLast1     ! Notch filter slopes previous output 1
+    REAL(8), DIMENSION(99)        :: nfs_OutputSignalLast2     ! Notch filter slopes previous output 2
+    REAL(8), DIMENSION(99)        :: nfs_InputSignalLast1      ! Notch filter slopes previous input 1
+    REAL(8), DIMENSION(99)        :: nfs_InputSignalLast2      ! Notch filter slopes previous input 1
+    REAL(8), DIMENSION(99)        :: nfs_b2                    ! Notch filter slopes numerator coefficient 2
+    REAL(8), DIMENSION(99)        :: nfs_b0                    ! Notch filter slopes numerator coefficient 0
+    REAL(8), DIMENSION(99)        :: nfs_a2                    ! Notch filter slopes denominator coefficient 2
+    REAL(8), DIMENSION(99)        :: nfs_a1                    ! Notch filter slopes denominator coefficient 1
+    REAL(8), DIMENSION(99)        :: nfs_a0                    ! Notch filter slopes denominator coefficient 0
+    REAL(8), DIMENSION(99)        :: nf_OutputSignalLast1      ! Notch filter previous output 1
+    REAL(8), DIMENSION(99)        :: nf_OutputSignalLast2      ! Notch filter previous output 2
+    REAL(8), DIMENSION(99)        :: nf_InputSignalLast1       ! Notch filter previous input 1
+    REAL(8), DIMENSION(99)        :: nf_InputSignalLast2       ! Notch filter previous input 2
+    REAL(8), DIMENSION(99)        :: nf_b2                     ! Notch filter numerator coefficient 2
+    REAL(8), DIMENSION(99)        :: nf_b1                     ! Notch filter numerator coefficient 1
+    REAL(8), DIMENSION(99)        :: nf_b0                     ! Notch filter numerator coefficient 0
+    REAL(8), DIMENSION(99)        :: nf_a1                     ! Notch filter denominator coefficient 1
+    REAL(8), DIMENSION(99)        :: nf_a0                     ! Notch filter denominator coefficient 0
 end type FilterParameters
 
 type :: piParams
-    REAL(8), DIMENSION(99)        :: ITerm                   ! Denominator coefficient 1
-    REAL(8), DIMENSION(99)        :: ITermLast                   ! Denominator coefficient 1
+    REAL(8), DIMENSION(99)        :: ITerm                   ! Integrator term
+    REAL(8), DIMENSION(99)        :: ITermLast               ! Previous integrator term
+    REAL(8), DIMENSION(99)        :: ITerm2                  ! Integrator term - second integrator
+    REAL(8), DIMENSION(99)        :: ITermLast2              ! Previous integrator term - second integrator
 end type piParams
 
 TYPE, PUBLIC :: LocalVariables
@@ -195,6 +217,10 @@ TYPE, PUBLIC :: LocalVariables
     REAL(8)                               :: GenArTq                      ! Electrical generator torque, for above-rated PI-control [Nm].
     REAL(8)                               :: GenBrTq                      ! Electrical generator torque, for below-rated PI-control [Nm].
     REAL(8)                               :: IPC_PitComF(3)               ! Commanded pitch of each blade as calculated by the individual pitch controller, F stands for low-pass filtered [rad].
+    REAL(8)                               :: IPC_IntAxisTilt_1P           ! Integral of the direct axis, 1P
+    REAL(8)                               :: IPC_IntAxisYaw_1P            ! Integral of quadrature axis, 1P
+    REAL(8)                               :: IPC_IntAxisTilt_2P           ! Integral of the direct axis, 2P
+    REAL(8)                               :: IPC_IntAxisYaw_2P            ! Integral of the quadrature axis, 2P
     REAL(8)                               :: PC_KP                        ! Proportional gain for pitch controller at rated pitch (zero) [s].
     REAL(8)                               :: PC_KI                        ! Integral gain for pitch controller at rated pitch (zero) [-].
     REAL(8)                               :: PC_KD                        ! Differential gain for pitch controller at rated pitch (zero) [-].
@@ -236,6 +262,7 @@ TYPE, PUBLIC :: LocalVariables
     REAL(8)                               :: NACIMU_FA_AccF
     REAL(8)                               :: FA_AccF
     REAL(8)                               :: Flp_Angle(3)                 ! Flap Angle (rad)
+    REAL(8)                               :: RootMyb_Last(3)              ! Previous blade root bending moment
     INTEGER(4)                            :: ACC_INFILE_SIZE
     CHARACTER, DIMENSION(:), ALLOCATABLE  :: ACC_INFILE
     LOGICAL(4)                            :: restart

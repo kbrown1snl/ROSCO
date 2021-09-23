@@ -88,9 +88,7 @@ CONTAINS
         ! Allocate local variables
         INTEGER(4)                      :: i                                            ! Counter for making arrays
         REAL(8)                         :: PTerm                                        ! Proportional term
-        ! REAL(8), DIMENSION(99), SAVE    :: ITerm = (/ (real(9999.9), i = 1,99) /)       ! Integral term, current.
-        ! REAL(8), DIMENSION(99), SAVE    :: ITermLast = (/ (real(9999.9), i = 1,99) /)   ! Integral term, the last time this controller was called. Supports 99 separate instances.
-        
+
         ! Initialize persistent variables/arrays, and set inital condition for integrator term
         IF (reset) THEN
             piP%ITerm(inst) = I0
@@ -110,10 +108,11 @@ CONTAINS
     END FUNCTION PIController
 
 !-------------------------------------------------------------------------------------------------------------------------------
-    REAL(8) FUNCTION PIIController(error, error2, kp, ki, ki2, minValue, maxValue, DT, I0, reset, inst)
+    REAL(8) FUNCTION PIIController(error, error2, kp, ki, ki2, minValue, maxValue, DT, I0, piP, reset, inst)
     ! PI controller, with output saturation. 
     ! Added error2 term for additional integral control input
-
+        USE ROSCO_Types, ONLY : piParams
+        
         IMPLICIT NONE
         ! Allocate Inputs
         REAL(8), INTENT(IN)         :: error
@@ -126,35 +125,30 @@ CONTAINS
         REAL(8), INTENT(IN)         :: DT
         INTEGER(4), INTENT(INOUT)   :: inst
         REAL(8), INTENT(IN)         :: I0
+        TYPE(piParams), INTENT(INOUT) :: piP
         LOGICAL, INTENT(IN)         :: reset     
         ! Allocate local variables
         INTEGER(4)                      :: i                                            ! Counter for making arrays
         REAL(8)                         :: PTerm                                        ! Proportional term
-        REAL(8), DIMENSION(99), SAVE    :: ITerm = (/ (real(9999.9), i = 1,99) /)       ! Integral term, current.
-        REAL(8), DIMENSION(99), SAVE    :: ITermLast = (/ (real(9999.9), i = 1,99) /)   ! Integral term, the last time this controller was called. Supports 99 separate instances.
-        REAL(8), DIMENSION(99), SAVE    :: ITerm2 = (/ (real(9999.9), i = 1,99) /)       ! Second Integral term, current.
-        REAL(8), DIMENSION(99), SAVE    :: ITermLast2 = (/ (real(9999.9), i = 1,99) /)   ! Second Integral term, the last time this controller was called. Supports 99 separate instances.
-        INTEGER(4), DIMENSION(99), SAVE :: FirstCall = (/ (1, i=1,99) /)                ! First call of this function?
-        
+
         ! Initialize persistent variables/arrays, and set inital condition for integrator term
-        IF ((FirstCall(inst) == 1) .OR. reset) THEN
-            ITerm(inst) = I0
-            ITermLast(inst) = I0
-            ITerm2(inst) = I0
-            ITermLast2(inst) = I0
+        IF (reset) THEN
+            piP%ITerm(inst) = I0
+            piP%ITermLast(inst) = I0
+            piP%ITerm2(inst) = I0
+            piP%ITermLast2(inst) = I0
             
-            FirstCall(inst) = 0
             PIIController = I0
         ELSE
             PTerm = kp*error
-            ITerm(inst) = ITerm(inst) + DT*ki*error
-            ITerm2(inst) = ITerm2(inst) + DT*ki2*error2
-            ITerm(inst) = saturate(ITerm(inst), minValue, maxValue)
-            ITerm2(inst) = saturate(ITerm2(inst), minValue, maxValue)
-            PIIController = PTerm + ITerm(inst) + ITerm2(inst)
+            piP%ITerm(inst) = piP%ITerm(inst) + DT*ki*error
+            piP%ITerm2(inst) = piP%ITerm2(inst) + DT*ki2*error2
+            piP%ITerm(inst) = saturate(piP%ITerm(inst), minValue, maxValue)
+            piP%ITerm2(inst) = saturate(piP%ITerm2(inst), minValue, maxValue)
+            PIIController = PTerm + piP%ITerm(inst) + piP%ITerm2(inst)
             PIIController = saturate(PIIController, minValue, maxValue)
         
-            ITermLast(inst) = ITerm(inst)
+            piP%ITermLast(inst) = piP%ITerm(inst)
         END IF
         inst = inst + 1
         

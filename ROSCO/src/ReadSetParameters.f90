@@ -961,6 +961,10 @@ CONTAINS
             WRITE( Un, IOSTAT=ErrStat) LocalVar%IPC_PitComF(1)
             WRITE( Un, IOSTAT=ErrStat) LocalVar%IPC_PitComF(2)
             WRITE( Un, IOSTAT=ErrStat) LocalVar%IPC_PitComF(3)
+            WRITE( Un, IOSTAT=ErrStat) LocalVar%IPC_IntAxisTilt_1P
+            WRITE( Un, IOSTAT=ErrStat) LocalVar%IPC_IntAxisYaw_1P
+            WRITE( Un, IOSTAT=ErrStat) LocalVar%IPC_IntAxisTilt_2P
+            WRITE( Un, IOSTAT=ErrStat) LocalVar%IPC_IntAxisYaw_2P
             WRITE( Un, IOSTAT=ErrStat) LocalVar%PC_KP
             WRITE( Un, IOSTAT=ErrStat) LocalVar%PC_KI
             WRITE( Un, IOSTAT=ErrStat) LocalVar%PC_KD
@@ -1008,6 +1012,9 @@ CONTAINS
             WRITE( Un, IOSTAT=ErrStat) LocalVar%Flp_Angle(1)
             WRITE( Un, IOSTAT=ErrStat) LocalVar%Flp_Angle(2)
             WRITE( Un, IOSTAT=ErrStat) LocalVar%Flp_Angle(3)
+            WRITE( Un, IOSTAT=ErrStat) LocalVar%RootMyb_Last(1)
+            WRITE( Un, IOSTAT=ErrStat) LocalVar%RootMyb_Last(2)
+            WRITE( Un, IOSTAT=ErrStat) LocalVar%RootMyb_Last(3)
             WRITE( Un, IOSTAT=ErrStat) LocalVar%ACC_INFILE_SIZE
             WRITE( Un, IOSTAT=ErrStat) LocalVar%ACC_INFILE
             WRITE( Un, IOSTAT=ErrStat) LocalVar%restart
@@ -1043,9 +1050,31 @@ CONTAINS
             WRITE( Un, IOSTAT=ErrStat) LocalVar%FP%lpf2_OutputSignalLast2
             WRITE( Un, IOSTAT=ErrStat) LocalVar%FP%lpf2_InputSignalLast1
             WRITE( Un, IOSTAT=ErrStat) LocalVar%FP%lpf2_OutputSignalLast1
+            WRITE( un, IOSTAT=ErrStat) LocalVar%FP%hpf_InputSignalLast
+            WRITE( un, IOSTAT=ErrStat) LocalVar%FP%hpf_OutputSignalLast
+            WRITE( un, IOSTAT=ErrStat) LocalVar%FP%nfs_OutputSignalLast1
+            WRITE( un, IOSTAT=ErrStat) LocalVar%FP%nfs_OutputSignalLast2
+            WRITE( un, IOSTAT=ErrStat) LocalVar%FP%nfs_InputSignalLast1
+            WRITE( un, IOSTAT=ErrStat) LocalVar%FP%nfs_InputSignalLast2
+            WRITE( un, IOSTAT=ErrStat) LocalVar%FP%nfs_b2
+            WRITE( un, IOSTAT=ErrStat) LocalVar%FP%nfs_b0
+            WRITE( un, IOSTAT=ErrStat) LocalVar%FP%nfs_a2
+            WRITE( un, IOSTAT=ErrStat) LocalVar%FP%nfs_a1
+            WRITE( un, IOSTAT=ErrStat) LocalVar%FP%nfs_a0
+            WRITE( un, IOSTAT=ErrStat) LocalVar%FP%nf_OutputSignalLast1
+            WRITE( un, IOSTAT=ErrStat) LocalVar%FP%nf_OutputSignalLast2
+            WRITE( un, IOSTAT=ErrStat) LocalVar%FP%nf_InputSignalLast1
+            WRITE( un, IOSTAT=ErrStat) LocalVar%FP%nf_InputSignalLast2
+            WRITE( un, IOSTAT=ErrStat) LocalVar%FP%nf_b2
+            WRITE( un, IOSTAT=ErrStat) LocalVar%FP%nf_b1
+            WRITE( un, IOSTAT=ErrStat) LocalVar%FP%nf_b0
+            WRITE( un, IOSTAT=ErrStat) LocalVar%FP%nf_a1
+            WRITE( un, IOSTAT=ErrStat) LocalVar%FP%nf_a0
 
             WRITE( Un, IOSTAT=ErrStat) LocalVar%piP%ITerm
             WRITE( Un, IOSTAT=ErrStat) LocalVar%piP%ITermLast
+            WRITE( Un, IOSTAT=ErrStat) LocalVar%piP%ITerm2
+            WRITE( Un, IOSTAT=ErrStat) LocalVar%piP%ITermLast2
 
             CLOSE ( Un )
 
@@ -1116,6 +1145,10 @@ CONTAINS
             READ( Un, IOSTAT=ErrStat) LocalVar%IPC_PitComF(1)
             READ( Un, IOSTAT=ErrStat) LocalVar%IPC_PitComF(2)
             READ( Un, IOSTAT=ErrStat) LocalVar%IPC_PitComF(3)
+            READ( Un, IOSTAT=ErrStat) LocalVar%IPC_IntAxisTilt_1P
+            READ( Un, IOSTAT=ErrStat) LocalVar%IPC_IntAxisYaw_1P
+            READ( Un, IOSTAT=ErrStat) LocalVar%IPC_IntAxisTilt_2P
+            READ( Un, IOSTAT=ErrStat) LocalVar%IPC_IntAxisYaw_2P
             READ( Un, IOSTAT=ErrStat) LocalVar%PC_KP
             READ( Un, IOSTAT=ErrStat) LocalVar%PC_KI
             READ( Un, IOSTAT=ErrStat) LocalVar%PC_KD
@@ -1163,6 +1196,9 @@ CONTAINS
             READ( Un, IOSTAT=ErrStat) LocalVar%Flp_Angle(1)
             READ( Un, IOSTAT=ErrStat) LocalVar%Flp_Angle(2)
             READ( Un, IOSTAT=ErrStat) LocalVar%Flp_Angle(3)
+            READ( Un, IOSTAT=ErrStat) LocalVar%RootMyb_Last(1)
+            READ( Un, IOSTAT=ErrStat) LocalVar%RootMyb_Last(2)
+            READ( Un, IOSTAT=ErrStat) LocalVar%RootMyb_Last(3)
             READ( Un, IOSTAT=ErrStat) LocalVar%ACC_INFILE_SIZE
             ALLOCATE(LocalVar%ACC_INFILE(LocalVar%ACC_INFILE_SIZE))
             READ( Un, IOSTAT=ErrStat) LocalVar%ACC_INFILE
@@ -1199,9 +1235,31 @@ CONTAINS
             READ( Un, IOSTAT=ErrStat) LocalVar%FP%lpf2_OutputSignalLast2
             READ( Un, IOSTAT=ErrStat) LocalVar%FP%lpf2_InputSignalLast1
             READ( Un, IOSTAT=ErrStat) LocalVar%FP%lpf2_OutputSignalLast1
+            READ( un, IOSTAT=ErrStat) LocalVar%FP%hpf_InputSignalLast
+            READ( un, IOSTAT=ErrStat) LocalVar%FP%hpf_OutputSignalLast
+            READ( un, IOSTAT=ErrStat) LocalVar%FP%nfs_OutputSignalLast1
+            READ( un, IOSTAT=ErrStat) LocalVar%FP%nfs_OutputSignalLast2
+            READ( un, IOSTAT=ErrStat) LocalVar%FP%nfs_InputSignalLast1
+            READ( un, IOSTAT=ErrStat) LocalVar%FP%nfs_InputSignalLast2
+            READ( un, IOSTAT=ErrStat) LocalVar%FP%nfs_b2
+            READ( un, IOSTAT=ErrStat) LocalVar%FP%nfs_b0
+            READ( un, IOSTAT=ErrStat) LocalVar%FP%nfs_a2
+            READ( un, IOSTAT=ErrStat) LocalVar%FP%nfs_a1
+            READ( un, IOSTAT=ErrStat) LocalVar%FP%nfs_a0
+            READ( un, IOSTAT=ErrStat) LocalVar%FP%nf_OutputSignalLast1
+            READ( un, IOSTAT=ErrStat) LocalVar%FP%nf_OutputSignalLast2
+            READ( un, IOSTAT=ErrStat) LocalVar%FP%nf_InputSignalLast1
+            READ( un, IOSTAT=ErrStat) LocalVar%FP%nf_InputSignalLast2
+            READ( un, IOSTAT=ErrStat) LocalVar%FP%nf_b2
+            READ( un, IOSTAT=ErrStat) LocalVar%FP%nf_b1
+            READ( un, IOSTAT=ErrStat) LocalVar%FP%nf_b0
+            READ( un, IOSTAT=ErrStat) LocalVar%FP%nf_a1
+            READ( un, IOSTAT=ErrStat) LocalVar%FP%nf_a0
 
             READ( Un, IOSTAT=ErrStat) LocalVar%piP%ITerm
             READ( Un, IOSTAT=ErrStat) LocalVar%piP%ITermLast
+            READ( Un, IOSTAT=ErrStat) LocalVar%piP%ITerm2
+            READ( Un, IOSTAT=ErrStat) LocalVar%piP%ITermLast2
 
             CLOSE ( Un )
         ENDIF
