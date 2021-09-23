@@ -156,9 +156,9 @@ CONTAINS
                         '------------------------------------------------------------------------------'        
                        
             ! Specifically save accINFILE info (DISCON.IN)
-            LocalVar%ACC_INFILE_SIZE = NINT(avrSWAP(50))-1
+            LocalVar%ACC_INFILE_SIZE = NINT(avrSWAP(50))
             Allocate(LocalVar%ACC_INFILE(LocalVar%ACC_INFILE_SIZE))
-            LocalVar%ACC_INFILE = accINFILE(1:LocalVar%ACC_INFILE_SIZE)
+            LocalVar%ACC_INFILE = accINFILE
 
             CALL ReadControlParameterFileSub(CntrPar, LocalVar%ACC_INFILE, LocalVar%ACC_INFILE_SIZE,ErrVar)
             ! If there's been an file reading error, don't continue
