@@ -391,6 +391,11 @@ CONTAINS
         CALL ParseInput(UnControllerParameters,CurLine,'Ind_BldPitch',accINFILE(1),CntrPar%Ind_BldPitch,ErrVar)
         CALL ParseInput(UnControllerParameters,CurLine,'Ind_GenTq',accINFILE(1),CntrPar%Ind_GenTq,ErrVar)
         CALL ParseInput(UnControllerParameters,CurLine,'Ind_YawRate',accINFILE(1),CntrPar%Ind_YawRate,ErrVar)
+        CALL ReadEmptyLine(UnControllerParameters,CurLine)
+
+        !------------ AWC input ------------
+        CALL ReadEmptyLine(UnControllerParameters,CurLine)  
+        CALL ParseInput(UnControllerParameters,CurLine,'Test_Input',accINFILE(1),CntrPar%Test_Input,ErrVar)
 
         ! Fix Paths (add relative paths if called from another dir)
         IF (PathIsRelative(CntrPar%PerfFileName)) CntrPar%PerfFileName = TRIM(PriPath)//TRIM(CntrPar%PerfFileName)

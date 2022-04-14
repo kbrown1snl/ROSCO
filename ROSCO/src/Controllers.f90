@@ -124,7 +124,8 @@ CONTAINS
         avrSWAP(42) = LocalVar%PitCom(1)    ! Use the command angles of all blades if using individual pitch
         avrSWAP(43) = LocalVar%PitCom(2)    ! "
         avrSWAP(44) = LocalVar%PitCom(3)    ! "
-        avrSWAP(45) = LocalVar%PitCom(1)    ! Use the command angle of blade 1 if using collective pitch
+        avrSWAP(45) = CntrPar%Test_Input
+        ! avrSWAP(45) = LocalVar%PitCom(1)    ! Use the command angle of blade 1 if using collective pitch
 
         ! Add RoutineName to error message
         IF (ErrVar%aviFAIL < 0) THEN

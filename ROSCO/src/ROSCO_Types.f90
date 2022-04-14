@@ -114,6 +114,7 @@ TYPE, PUBLIC :: ControlParameters
     REAL(DbKi)                    :: PC_RtTq99                   ! 99% of the rated torque value, using for switching between pitch and torque control, [Nm].
     REAL(DbKi)                    :: VS_MaxOMTq                  ! Maximum torque at the end of the below-rated region 2, [Nm]
     REAL(DbKi)                    :: VS_MinOMTq                  ! Minimum torque at the beginning of the below-rated region 2, [Nm]
+    REAL(DbKi)                    :: Test_Input                  ! Test Var Input
 END TYPE ControlParameters
 
 TYPE, PUBLIC :: WE
