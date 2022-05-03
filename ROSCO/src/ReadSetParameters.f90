@@ -395,9 +395,10 @@ CONTAINS
 
         !------------ AWC input ------------
         CALL ReadEmptyLine(UnControllerParameters,CurLine)  
-        CALL ParseInput(UnControllerParameters,CurLine,'AWC_amp',   accINFILE(1),CntrPar%AWC_amp, ErrVar)
-        CALL ParseInput(UnControllerParameters,CurLine,'AWC_omega', accINFILE(1),CntrPar%AWC_omega, ErrVar)
-        CALL ParseInput(UnControllerParameters,CurLine,'AWC_n',     accINFILE(1),CntrPar%AWC_n,ErrVar)
+        CALL ParseInput(UnControllerParameters,CurLine,'AWC_NumModes',  accINFILE(1),CntrPar%AWC_NumModes, ErrVar)
+        CALL ParseAry(  UnControllerParameters,CurLine,'AWC_n',         CntrPar%AWC_n,     CntrPar%AWC_NumModes, accINFILE(1), ErrVar)
+        CALL ParseAry(  UnControllerParameters,CurLine,'AWC_omega',     CntrPar%AWC_omega, CntrPar%AWC_NumModes, accINFILE(1), ErrVar)
+        CALL ParseAry(  UnControllerParameters,CurLine,'AWC_amp',       CntrPar%AWC_amp,   CntrPar%AWC_NumModes, accINFILE(1), ErrVar)
 
         ! Fix Paths (add relative paths if called from another dir)
         IF (PathIsRelative(CntrPar%PerfFileName)) CntrPar%PerfFileName = TRIM(PriPath)//TRIM(CntrPar%PerfFileName)

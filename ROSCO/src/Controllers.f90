@@ -49,6 +49,7 @@ CONTAINS
         REAL(DbKi), DIMENSION(3)                        :: AWC_angle
         DOUBLE COMPLEX, DIMENSION(3)                    :: AWC_complexangle
         DOUBLE COMPLEX                                  :: complexI = (0.0, 1.0)
+        INTEGER(IntKi)                                  :: Imode       ! Index used for looping through AWC modes
 
 
         ! ------- Blade Pitch Controller --------
@@ -129,11 +130,14 @@ CONTAINS
         ENDIF
 
         ! Compute the AWC pitch settings
-        AWC_angle(1) = CntrPar%AWC_omega * LocalVar%Time - CntrPar%AWC_n * (LocalVar%Azimuth + phi1)
-        AWC_angle(2) = CntrPar%AWC_omega * LocalVar%Time - CntrPar%AWC_n * (LocalVar%Azimuth + phi2)
-        AWC_angle(3) = CntrPar%AWC_omega * LocalVar%Time - CntrPar%AWC_n * (LocalVar%Azimuth + phi3)
-        DO K = 1,LocalVar%NumBl ! Loop through all blades
-           AWC_complexangle(K) = CntrPar%AWC_amp * EXP(complexI * (AWC_angle(K)))
+        AWC_complexangle = 0.0D0
+        DO Imode = 1,CntrPar%AWC_NumModes
+           AWC_angle(1) = CntrPar%AWC_omega(Imode) * LocalVar%Time - CntrPar%AWC_n(Imode) * (LocalVar%Azimuth + phi1)
+           AWC_angle(2) = CntrPar%AWC_omega(Imode) * LocalVar%Time - CntrPar%AWC_n(Imode) * (LocalVar%Azimuth + phi2)
+           AWC_angle(3) = CntrPar%AWC_omega(Imode) * LocalVar%Time - CntrPar%AWC_n(Imode) * (LocalVar%Azimuth + phi3)
+           DO K = 1,LocalVar%NumBl ! Loop through all blades
+              AWC_complexangle(K) = AWC_complexangle(K) + CntrPar%AWC_amp(Imode) * EXP(complexI * (AWC_angle(K)))
+           END DO
         END DO
         !WRITE (*,*) 'AWC ANGLE = ',REAL(AWC_complexangle(1)) 
 
