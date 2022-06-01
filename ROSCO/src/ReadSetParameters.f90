@@ -399,6 +399,7 @@ CONTAINS
         CALL ParseAry(  UnControllerParameters,CurLine,'AWC_n',         CntrPar%AWC_n,     CntrPar%AWC_NumModes, accINFILE(1), ErrVar)
         CALL ParseAry(  UnControllerParameters,CurLine,'AWC_omega',     CntrPar%AWC_omega, CntrPar%AWC_NumModes, accINFILE(1), ErrVar)
         CALL ParseAry(  UnControllerParameters,CurLine,'AWC_amp',       CntrPar%AWC_amp,   CntrPar%AWC_NumModes, accINFILE(1), ErrVar)
+        CALL ParseAry(  UnControllerParameters,CurLine,'AWC_clockangle',CntrPar%AWC_clockangle,CntrPar%AWC_NumModes, accINFILE(1), ErrVar)
 
         ! Fix Paths (add relative paths if called from another dir)
         IF (PathIsRelative(CntrPar%PerfFileName)) CntrPar%PerfFileName = TRIM(PriPath)//TRIM(CntrPar%PerfFileName)

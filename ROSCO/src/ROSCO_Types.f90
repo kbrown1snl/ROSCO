@@ -117,6 +117,7 @@ TYPE, PUBLIC :: ControlParameters
     REAL(DbKi)                    :: Test_Input                  ! Test Var Input
     REAL(DbKi), DIMENSION(:), ALLOCATABLE     :: AWC_omega                   ! AWC frequency [rad/s]
     REAL(DbKi), DIMENSION(:), ALLOCATABLE     :: AWC_amp                     ! AWC amplitude [deg]
+    REAL(DbKi), DIMENSION(:), ALLOCATABLE     :: AWC_clockangle              ! AWC clocking angle [deg]
     INTEGER(IntKi), DIMENSION(:), ALLOCATABLE :: AWC_n                       ! AWC azimuthal mode [-]
     INTEGER(IntKi)                :: AWC_NumModes                ! AWC: Number of modes to include [-]
 
